@@ -1,4 +1,4 @@
-# unamed-carthing-connector
+# unamed-superbird-connector
 **This is currently in very early development and has no actual features yet.**  
 Tool to connect Superbird to the Spotify Web API \
 Currently only tested on Debian
