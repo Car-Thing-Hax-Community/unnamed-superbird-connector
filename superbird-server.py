@@ -1,92 +1,100 @@
 #!/usr/bin/env python3
 import bluetooth
 import umsgpack
-from enum import Enum
 import struct
+from util import *
 import datetime
-
+import os
 server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 server_sock.bind(("", bluetooth.PORT_ANY))
 server_sock.listen(1)
 port = server_sock.getsockname()[1]
 uuid = "e3cccccd-33b7-457d-a03c-aa1c54bf617f" # Superbird RFCOMM Service
 
-class opCodes(Enum):
-  HELLO = 1
-  WELCOME = 2
-  ABORT = 3
-  CHALLENGE = 4
-  AUTHENTICATE = 5
-  GOODBYE = 6
-  ERROR = 8
-  PUBLISH = 16
-  PUBLISHED = 17
-  SUBSCRIBE = 32
-  SUBSCRIBED = 33
-  UNSUBSCRIBE = 34
-  UNSUBSCRIBED = 35
-  EVENT = 36
-  CALL = 48
-  CANCEL = 49
-  RESULT = 50
-  REGISTER = 64
-  REGISTERED = 65
-  UNREGISTER = 66
-  UNREGISTERED = 67
-  INVOCATION = 68
-  INTERRUPT = 69
-  YIELD = 70
+# Just in case superbird_session.json wasn't removed on last launch
+try: os.remove("superbird_session.json") 
+except: pass
 
-def sendMsg(data):
+# Pack messages into MessagePack format and send them to Superbird
+def sendMsg(data_in):
+   data = umsgpack.packb(data_in)
    data_len = struct.pack('>I', len(data))
    data = data_len + data
    client_sock.send(data)
 
+
+# Un-MessagePack messages and send them to their respective handlers
 def processMsg(data: bytearray):
     try:
-        msg = umsgpack.unpackb(data[4:])
+        msg = umsgpack.unpackb(data)
         msg_opcode = opCodes(msg[0])
-        print(msg_opcode)
         match msg_opcode:
             case opCodes.HELLO:
                 json = msg[2]
-                sendMsg(create_auth(json))
+                sendMsg(hello_handler(json))
+
+            # The AUTHENTICATE message is the response to our "CHALLANGE" message. 
+            # We tell Superbird that it passed the challange/response by sending a "WELCOME" message
             case opCodes.AUTHENTICATE:
-                print('Welcoming Superbird...')
-                wel = umsgpack.packb([opCodes.WELCOME.value, 1, {'roles': {'dealer': {}, 'broker': {}}, 'app_version': '8.9.42.575', 'authprovider': '', 'authid': '', 'authrole': '', 'authmethod': '', 'date_time': '2024-05-25T18:55:33'}])
-                print(wel)
+                print('Welcoming Superbird...\n')
+                wel = build_wamp(opCodes.WELCOME, 1, {'roles': {'dealer': {}, 'broker': {}}, 'app_version': '8.9.42.575', 'authprovider': '', 'authid': '', 'authrole': '', 'authmethod': '', 'date_time': datetime.datetime.now().isoformat()})
                 sendMsg(wel)
+
+            case opCodes.CALL: # More info in util.py
+                    send, resp = function_handler(msg)
+                    if send:
+                        sendMsg(resp)
+
+            case opCodes.SUBSCRIBE: # More info in util.py
+                send, resp = subscribe_handler(msg)
+                if send:
+                        sendMsg(resp)
             case _:
-                print("Msg:", msg)
-    except:
-        print("Weird:", data)
-
-def create_auth(json):
-    print("SuperBird authenticating...")
-    #print(json)
-    print("Firmware:", json['info']['version'])
-    print("Serial No:", json['info']['device_identifier'])
-    print("Auth ID:", json['info']['id'])
-    challange_str = {'challenge': '{"nonce":"dummy_nounce","authid":"' + json['info']['id'] + '","timestamp":"' + datetime.datetime.now().isoformat() + '","authmethod":"wampcra"}'}
-    auth = umsgpack.packb([opCodes.CHALLENGE.value, 'wampcra', challange_str])
-    return auth
+                print("Unhandled opcode:", msg_opcode, " Msg:", msg)
+    except Exception:
+        #print(traceback.format_exc())
+        #print("Unknown Packet.\n")
+        pass
 
 
-bluetooth.advertise_service(server_sock, "Spotify", service_id=uuid, service_classes=[uuid, bluetooth.SERIAL_PORT_CLASS], profiles=[bluetooth.SERIAL_PORT_PROFILE])
+# We advertise the RFCOMM service that Superbird is expecting and accept any connections to it
+bluetooth.advertise_service(server_sock, "Superbird", service_id=uuid, service_classes=[uuid, bluetooth.SERIAL_PORT_CLASS], profiles=[bluetooth.SERIAL_PORT_PROFILE])
 print("Waiting for connection on RFCOMM channel", port)
 client_sock, client_info = server_sock.accept()
-print("Accepted connection from", client_info)
+
+
+# Messages to/from Superbird have a 4 byte length header, then the rest of the message is MessagePack
+# We read the first 4 bytes, convert that to an int then read again with the int as the size
+def get_msg(sock):
+    len_bytes = get_msg_with_len(sock, 4)
+    if not len_bytes:
+        return None
+    len = struct.unpack('>I', len_bytes)[0]
+    return get_msg_with_len(sock, len)
+
+def get_msg_with_len(sock, n):
+    data = bytearray()
+    while len(data) < n:
+        packet = sock.recv(n - len(data))
+        if not packet:
+            return None
+        data.extend(packet)
+    return data
 
 try:
     while True:
-        data = client_sock.recv(1024)
+        data = get_msg(client_sock)
         processMsg(data)
         if not data:
             break
 except OSError:
     pass
-
-print("\n\nDisconnected.")
+except KeyboardInterrupt:
+    pass
 
 client_sock.close()
 server_sock.close()
+
+# Info in superbird_session.json is only valid per connection so we simply delete it
+os.remove("superbird_session.json")
+print("\n\nDisconnected.")
