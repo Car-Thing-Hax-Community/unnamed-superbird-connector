@@ -28,10 +28,10 @@ they should be resolvable by editing `/etc/systemd/system/dbus-org.bluez.service
 ExecStart=/usr/libexec/bluetooth/bluetoothd --compat --noplugin=sap
 ExecStartPost=/usr/bin/hciconfig hci0 piscan
 ```
-then running `sudo systemctl daemon-reload && sudo systemctl restart bluetooth.service`. \
+then running `sudo systemctl daemon-reload && sudo systemctl restart bluetooth.service`.
 
 If you start getting `bluetooth.btcommon.BluetoothError: [Errno 13] Permission denied` errors, \
 run `sudo chgrp bluetooth /var/run/sdp` and make sure you're part of the `bluetooth` group.
 
 # Credits
-https://github.com/relative/deskthing
+https://github.com/relative/deskthing - Early Base for this code
