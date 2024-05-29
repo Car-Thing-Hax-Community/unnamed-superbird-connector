@@ -2,9 +2,12 @@
 import bluetooth
 import umsgpack
 import struct
-from util import *
+from superbird_util import *
+from superbird_sub_handler import *
 import datetime
 import os
+import threading
+
 server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 server_sock.bind(("", bluetooth.PORT_ANY))
 server_sock.listen(1)
@@ -15,45 +18,37 @@ uuid = "e3cccccd-33b7-457d-a03c-aa1c54bf617f" # Superbird RFCOMM Service
 try: os.remove("superbird_session.json") 
 except: pass
 
-# Pack messages into MessagePack format and send them to Superbird
-def sendMsg(data_in):
-   data = umsgpack.packb(data_in)
-   data_len = struct.pack('>I', len(data))
-   data = data_len + data
-   client_sock.send(data)
-
-
 # Un-MessagePack messages and send them to their respective handlers
 def processMsg(data: bytearray):
     try:
         msg = umsgpack.unpackb(data)
         msg_opcode = opCodes(msg[0])
         match msg_opcode:
-            case opCodes.HELLO:
+            case opCodes.HELLO: # More info in superbird_util.py
                 json = msg[2]
-                sendMsg(hello_handler(json))
+                sendMsg(hello_handler(json), client_sock)
 
             # The AUTHENTICATE message is the response to our "CHALLANGE" message. 
             # We tell Superbird that it passed the challange/response by sending a "WELCOME" message
             case opCodes.AUTHENTICATE:
                 print('Welcoming Superbird...\n')
-                wel = build_wamp(opCodes.WELCOME, 1, {'roles': {'dealer': {}, 'broker': {}}, 'app_version': '8.9.42.575', 'authprovider': '', 'authid': '', 'authrole': '', 'authmethod': '', 'date_time': datetime.datetime.now().isoformat()})
-                sendMsg(wel)
+                welcome = build_wamp(opCodes.WELCOME, 1, {'roles': {'dealer': {}, 'broker': {}}, 'app_version': '8.9.42.575', 'authprovider': '', 'authid': '', 'authrole': '', 'authmethod': '', 'date_time': datetime.datetime.now().isoformat()})
+                sendMsg(welcome, client_sock)
 
-            case opCodes.CALL: # More info in util.py
-                    send, resp = function_handler(msg)
-                    if send:
-                        sendMsg(resp)
+            case opCodes.CALL: # More info in superbird_util.py
+                send, resp = function_handler(msg)
+                if send:
+                    sendMsg(resp, client_sock)
 
-            case opCodes.SUBSCRIBE: # More info in util.py
+            case opCodes.SUBSCRIBE: # More info in superbird_util.py
                 send, resp = subscribe_handler(msg)
                 if send:
-                        sendMsg(resp)
+                        sendMsg(resp, client_sock)
             case _:
                 print("Unhandled opcode:", msg_opcode, " Msg:", msg)
     except Exception:
-        #print(traceback.format_exc())
-        #print("Unknown Packet.\n")
+        print(traceback.format_exc())
+        print("Unknown Packet.\n")
         pass
 
 
@@ -62,24 +57,9 @@ bluetooth.advertise_service(server_sock, "Superbird", service_id=uuid, service_c
 print("Waiting for connection on RFCOMM channel", port)
 client_sock, client_info = server_sock.accept()
 
-
-# Messages to/from Superbird have a 4 byte length header, then the rest of the message is MessagePack
-# We read the first 4 bytes, convert that to an int then read again with the int as the size
-def get_msg(sock):
-    len_bytes = get_msg_with_len(sock, 4)
-    if not len_bytes:
-        return None
-    len = struct.unpack('>I', len_bytes)[0]
-    return get_msg_with_len(sock, len)
-
-def get_msg_with_len(sock, n):
-    data = bytearray()
-    while len(data) < n:
-        packet = sock.recv(n - len(data))
-        if not packet:
-            return None
-        data.extend(packet)
-    return data
+# Start subscription handler thread
+sub_handler_thread = threading.Thread(target=subHandlerThread, args=(client_sock,), daemon=True)
+sub_handler_thread.start()
 
 try:
     while True:
@@ -95,6 +75,6 @@ except KeyboardInterrupt:
 client_sock.close()
 server_sock.close()
 
-# Info in superbird_session.json is only valid per connection so we simply delete it
+# Info in superbird_session.json is only valid per connection so we simply delete it once we're done.
 os.remove("superbird_session.json")
 print("\n\nDisconnected.")

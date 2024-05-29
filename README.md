@@ -15,7 +15,8 @@ umsgpack - https://github.com/vsergeev/u-msgpack-python \
 
 # Running
 Simply try running `python3 superbird-server.py` then pair your Superbird. \
-To confirm that it's working, go into Settings then Tips on your Superbird and you should see a message there. 
+If it was factory reset, skip through the tutorial.
+Once it connects, you'll see "Superbird connector is running!" on the screen.
 
 # Troubleshooting
 If you get any of these errors:
