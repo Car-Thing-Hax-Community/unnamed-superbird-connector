@@ -1,5 +1,5 @@
 # unamed-superbird-connector
-**This is currently in very early development and has no actual features yet.**  
+**This fork is a copy of the code before I started adding support for the Spotify API. It doesn't do much as-is but could serve as a simple base for another project.**  
 Tool to connect Superbird to the Spotify Web API \
 Currently only tested on Debian
 
