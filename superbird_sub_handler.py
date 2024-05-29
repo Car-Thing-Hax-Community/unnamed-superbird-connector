@@ -24,13 +24,13 @@ def subHandlerThread(client_sock):
                 case "com.spotify.superbird.player_state": # Different fw versions sub to different state events?
                     print("Sub: Send player state")
                     pub_id += 1
-                    info = build_wamp_event(opCodes.EVENT, sub_info['sub_id'], pub_id, build_active_song("CarThingHax", "Superbird connector is", "Album", "running!"))
+                    info = build_wamp_event(opCodes.EVENT, sub_info['sub_id'], pub_id, build_active_song_simple_player("CarThingHax", "Superbird connector is", "Album", "running!"))
                     sendMsg(info, client_sock)
                 
                 case "com.spotify.player_state": # Different fw versions sub to different state events?
                     print("Sub: Send player state")
                     pub_id += 1
-                    info = build_wamp_event(opCodes.EVENT, sub_info['sub_id'], pub_id, build_active_song("CarThingHax", "Superbird connector is", "Album", "running!"))
+                    info = build_wamp_event(opCodes.EVENT, sub_info['sub_id'], pub_id, build_active_song_simple_player("CarThingHax", "Superbird connector is", "Album", "running!"))
                     sendMsg(info, client_sock)
                 
                 case "com.spotify.superbird.car_mode":

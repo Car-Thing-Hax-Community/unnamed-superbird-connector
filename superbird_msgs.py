@@ -9,7 +9,7 @@ remote_config_response = {
         'tips_show_time': 20,
         'night_mode_slope': 10,
         'graphql_endpoint_enabled': True,
-        'sunset_info_screen_nag': True,
+        'sunset_info_screen_nag': False,
         'upload_wakeword': False,
         'ota_inactivity_timeout': 10,
         'podcast_trailer_enabled': True,
@@ -39,8 +39,8 @@ remote_config_response = {
         'enable_push_to_talk_npv': False,
         'volume_control': True,
         'graphql_for_shelf_enabled': True,
-        'sunset_kill_switch': True,
-        'sunset_info_screen': True,
+        'sunset_kill_switch': False,
+        'sunset_info_screen': False,
         'use_playerstate_superbird_namespace': True,
         'tips_on_demand_enabled': True}}
 
@@ -65,8 +65,53 @@ player_state_msg_1 = {
    "playback_speed":0
 }
 
+def build_active_song(app_name= "", song_title= "", album_name= "", artist_name="", artists= "", duration_ms = 0, positon_ms = 0, image_bytes= []): 
+    player_state_msg = {
+    "context_uri":"spotify:user:h4b354yhi63eaht0uncds5h00:collection",
+    "is_paused":false,
+    "is_paused_bool":false,
+    "playback_options":{
+        "repeat":0,
+        "shuffle":false
+    },
+    "playback_position":0,
+    "playback_restrictions":{
+        "can_repeat_context":true,
+        "can_repeat_track":true,
+        "can_seek":true,
+        "can_skip_next":true,
+        "can_skip_prev":true,
+        "can_toggle_shuffle":true
+    },
+    "playback_speed":0,
+    "track":{
+        "album":{
+            "name":"What Do You Want!",
+            "uri":"spotify:album:1lFNSw64rOJ9q0cdFsEcbf"
+        },
+        "artist":{
+            "name":"acloudyskye",
+            "uri":"spotify:artist:5OeSHuvHTS9qUgAUTt3GIR"
+        },
+        "artists":[
+            {
+                "name":"acloudyskye",
+                "uri":"spotify:artist:5OeSHuvHTS9qUgAUTt3GIR"
+            }
+        ],
+        "duration_ms":764000,
+        "image_id":"spotify:image:ab67616d00001e026f8c94b5a6dd043dbc5f0b35",
+        "is_episode":false,
+        "is_podcast":false,
+        "name":"Thief!",
+        "saved":true,
+        "uid":"5836ec98f58d8bd645f7",
+        "uri":"spotify:track:35dIKUaKfV6Oof0v6Dme4j"
+    }
+    }
+    return player_state_msg
 
-def build_active_song(app_name= "", song_title= "", album_name= "", artist_name="", artists= "", duration_ms = 0, positon_ms = 0, image_bytes= []):
+def build_active_song_simple_player(app_name= "", song_title= "", album_name= "", artist_name="", artists= "", duration_ms = 0, positon_ms = 0, image_bytes= []):
     player_state_msg = {
     "currently_active_application":{
         "id":"com." + app_name,
