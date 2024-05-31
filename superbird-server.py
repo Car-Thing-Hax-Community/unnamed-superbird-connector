@@ -2,15 +2,17 @@
 import bluetooth
 import umsgpack
 import struct
-from superbird_util import *
-from superbird_sub_handler import *
 import datetime
 import os
 import threading
-
+import traceback
+import common.sb_common as sb_c
+import utils.bt_handler as bt_handler
+import utils.wamp_handler as wamp_h
+import utils.pubsub_handler
 server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 server_sock.bind(("", bluetooth.PORT_ANY))
-server_sock.listen(1)
+server_sock.listen(1) 
 port = server_sock.getsockname()[1]
 uuid = "e3cccccd-33b7-457d-a03c-aa1c54bf617f" # Superbird RFCOMM Service
 
@@ -22,28 +24,27 @@ except: pass
 def processMsg(data: bytearray):
     try:
         msg = umsgpack.unpackb(data)
-        msg_opcode = opCodes(msg[0])
+        msg_opcode = sb_c.opCodes(msg[0])
         match msg_opcode:
-            case opCodes.HELLO: # More info in superbird_util.py
+            case sb_c.opCodes.HELLO: # More info in superbird_util.py
                 json = msg[2]
-                sendMsg(hello_handler(json), client_sock)
+                bt_handler.sendMsg(wamp_h.hello_handler(json), client_sock)
 
             # The AUTHENTICATE message is the response to our "CHALLANGE" message. 
             # We tell Superbird that it passed the challange/response by sending a "WELCOME" message
-            case opCodes.AUTHENTICATE:
-                print('Welcoming Superbird...\n')
-                welcome = build_wamp(opCodes.WELCOME, 1, {'roles': {'dealer': {}, 'broker': {}}, 'app_version': '8.9.42.575', 'authprovider': '', 'authid': '', 'authrole': '', 'authmethod': '', 'date_time': datetime.datetime.now().isoformat()})
-                sendMsg(welcome, client_sock)
+            case sb_c.opCodes.AUTHENTICATE:
+                
+                bt_handler.sendMsg(wamp_h.authenticate_handler(), client_sock)
 
-            case opCodes.CALL: # More info in superbird_util.py
-                send, resp = function_handler(msg)
+            case sb_c.opCodes.CALL: # More info in superbird_util.py
+                send, resp = wamp_h.function_handler(msg)
                 if send:
-                    sendMsg(resp, client_sock)
+                    bt_handler.sendMsg(resp, client_sock)
 
-            case opCodes.SUBSCRIBE: # More info in superbird_util.py
-                send, resp = subscribe_handler(msg)
+            case sb_c.opCodes.SUBSCRIBE: # More info in superbird_util.py
+                send, resp = wamp_h.subscribe_handler(msg)
                 if send:
-                        sendMsg(resp, client_sock)
+                    bt_handler.sendMsg(resp, client_sock)
             case _:
                 print("Unhandled opcode:", msg_opcode, " Msg:", msg)
     except Exception:
@@ -58,12 +59,12 @@ print("Waiting for connection on RFCOMM channel", port)
 client_sock, client_info = server_sock.accept()
 
 # Start subscription handler thread
-sub_handler_thread = threading.Thread(target=subHandlerThread, args=(client_sock,), daemon=True)
+sub_handler_thread = threading.Thread(target=utils.pubsub_handler.subHandlerThread, args=(client_sock,), daemon=True)
 sub_handler_thread.start()
 
 try:
     while True:
-        data = get_msg(client_sock)
+        data = bt_handler.get_msg(client_sock)
         processMsg(data)
         if not data:
             break
