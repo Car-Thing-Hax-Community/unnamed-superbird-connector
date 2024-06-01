@@ -1,6 +1,8 @@
 # To-do and other notes
 
 ## Hey Spotify
+When Superbird detects "Hey Spotify", it starts streaming microphone audio to the phone in ogg format in .5 second chunks. Currently, connector just writes the audio to a .ogg file.
+
 Need to implement transcript response from the Spotify app. Looks like this:\
 In this example, I said "testing".
 ```
