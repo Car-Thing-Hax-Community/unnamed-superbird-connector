@@ -1,6 +1,6 @@
 ---
 name: '"Unhandled call" error'
-about: Report any  "Unhandled call" errors with this template
+about: Report any "Unhandled call" errors with this template
 title: "[CALL] Unhandled Call"
 labels: ''
 assignees: ''
@@ -25,7 +25,7 @@ Describe what you were doing when the error appeared:
 3. Scroll down to '....'
 4. See error
 
-**Desktop (please complete the following information):**
+**Desktop:**
  - OS: [e.g. Debian 12]
 
 **Additional context**
