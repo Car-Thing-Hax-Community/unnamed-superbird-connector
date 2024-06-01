@@ -4,6 +4,8 @@
 Tool to connect Superbird to the Spotify Web API \
 Currently only tested on Debian
 
+**If you get any exceptions or `Unhandled call` errors, please open an issue that describes what you were doing and a copy of the error. Every little bit of info helps!**
+
 # Current Progress
 Most, if not all messages to/from Superbird are implemented.\
 Right now there's still just placeholders everywhere, more work is needed to connect to the Spotify API.
