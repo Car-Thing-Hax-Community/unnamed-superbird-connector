@@ -9,7 +9,6 @@ import base64
 import utils.wamp.wamp_builder as wamp_b
 import common.sb_common as sb_c
 import common.messages as sb_msgs
-import utils.sp_api as sp_api
 import utils.graphql_handler as gql
 import common.images as sb_img
 from PIL import Image 
@@ -207,7 +206,7 @@ def function_handler(msg):
                 case "com.spotify.superbird.pause":
                     print("Superbird: Pause media")
                     #sp_api.sp.pause_playback()
-                    #resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.resume":
                     print("Superbird: Resume media")
