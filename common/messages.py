@@ -4,12 +4,12 @@
 remote_config_response = {
     'result': {
         'log_signal_strength': True,
-        'log_requests': True,
+        'log_requests': False,
         'use_volume_superbird_namespace': True,
-        'tips_request_interval': 900,
+        'tips_request_interval': 20,
         'night_mode_enabled': True,
         'developer_menu_enabled': True,
-        'tips_show_time': 20,
+        'tips_show_time': 10,
         'night_mode_slope': 10,
         'graphql_endpoint_enabled': True,
         'sunset_info_screen_nag': False,
@@ -27,7 +27,7 @@ remote_config_response = {
         'non_spotify_playback_ios': False,
         'enable_push_to_talk_shelf': False,
         'queue_enabled': True,
-        'tips_startup_delay': 600,
+        'tips_startup_delay': 5,
         'batch_ubi_logs': True,
         'tips_interaction_delay': 4,
         'long_press_settings_power_off_v2': True,
@@ -45,139 +45,163 @@ remote_config_response = {
         'sunset_kill_switch': False,
         'sunset_info_screen': False,
         'use_playerstate_superbird_namespace': True,
-        'tips_on_demand_enabled': True}}
+        'tips_on_demand_enabled': True
+        }
+}
 
 
-# Contains stuff to show on the home screen. Can/will be generated from Spotify API
+graphql_homescreen = {
+   'data':{
+      'shelf':{
+         'items':[
+            {
+               'title':'Home',
+               'id':'featured',
+               'total':1,
+               'children':[
+               {
+               'uri':'spotify:user:fake:collection',
+               'title':'CarThingHax',
+               'subtitle':'Home card',
+               'image_id':"carthinghax_logo"
+            }
+               ]
+            },
+            {
+               'title':'Voice', # Used for voice results
+               'id':'voice',
+               'total':1,
+               'children':[
+                  {
+                     'uri':'spotify:user:fake:collection',
+                     'title':'CarThingHax',
+                     'subtitle':'Voice result card',
+                     'image_id':'carthinghax_logo'
+                  }
+               ]
+            },
+            {
+               'title':'Playlists',
+               'id':'playlists',
+               'total':1,
+               'children':[
+                  {
+                     'uri':'spotify:user:fake:collection',
+                     'title':'CarThingHax',
+                     'subtitle':'Playlist Card', 
+                     'image_id':'carthinghax_logo'
+                  }
+               ]
+            },
+            {
+               'title':'Podcasts',
+               'id':'podcasts',
+               'total':1,
+               'children':[
+                  {
+                     'uri':'spotify:playlist:fake',
+                     'title':'CarThingHax',
+                     'subtitle':'Podcast Card',
+                     'image_id':'carthinghax_logo'
+                  }
+               ]
+            },
+            {
+               'title':'Artists',
+               'id':'artists',
+               'total':1,
+               'children':[
+                  {
+                     'uri':'spotify:artist:fake',
+                     'title':'CarThingHax',
+                     'subtitle':'Artist Card',
+                     'image_id':'carthinghax_logo'
+                  }
+               ]
+            },
+            {
+               'title':'Albums',
+               'id':'albums',
+               'total':1,
+               'children':[
+                  {
+                     'uri':'spotify:album:fake',
+                     'title':'CarThingHax',
+                     'subtitle':'Album Card',
+                     'image_id':'carthinghax_logo'
+                  }
+               ]
+            }
+         ]
+      }
+   }
+}
 
-homescreen = {
+# Superbird has 2 different ways of getting the home screen, with graphql
+# or com.spotify.superbird.get_home. The get_home function is almost never used
+# so we just put a placeholder incase it happens to be used.
+old_homescreen = {
    'items':[
       {
          'uri':'spotify:space_item:superbird:superbird-featured',
          'title':'Home',
-         'total':4,
-         'children':[
-            {
-               'uri':'spotify:user:h4b354yhi63eaht0uncds5h00:collection',
-               'title':'Liked Songs',
-               'subtitle':'',
-               'image_id':'https://misc.scdn.co/liked-songs/liked-songs-300.png'
-            },
-            {
-               'uri':'spotify:show:5Sffly5o4mPetmnTR9zsWh',
-               'title':'Dungeons and Daddies',
-               'subtitle':'Dungeons and Daddies',
-               'image_id':'https://i.scdn.co/image/ab67656300005f1f69030c58137ed169dc420519'
-            },
-            {
-               'uri':'spotify:album:1lFNSw64rOJ9q0cdFsEcbf',
-               'title':'What Do You Want!',
-               'subtitle':'acloudyskye',
-               'image_id':'https://i.scdn.co/image/ab67616d00001e026f8c94b5a6dd043dbc5f0b35'
-            },
-            {
-               'uri':'spotify:playlist:0CryHan5NsIsI2vsKxwDqD',
-               'title':'Low energy',
-               'subtitle':'lmore377',
-               'image_id':'https://mosaic.scdn.co/300/ab67616d00001e0292317855f9ff83bf88f972f6ab67616d00001e029a7f15b305453fe85768b31fab67616d00001e029c8ef9c9585e3c1bafa39c65ab67616d00001e02d9508aea9edad0274d1b37bd'
-            }
-         ]
-      },
-      {
-         'uri':'spotify:space_item:superbird:superbird-voice',
-         'title':'Voice',
-         'total':1,
-         'children':[
-            {
-               'uri':'spotify:playlist:0000000000000000000000',
-               'title':'No voice results',
-               'subtitle':'',
-               'image_id':'https://misc.spotifycdn.com/superbird/images/voice_icon.png'
-            }
-         ]
-      },
-      {
-         'uri':'spotify:space_item:superbird:superbird-playlists-wrapper',
-         'title':'Playlists',
          'total':2,
          'children':[
             {
-               'uri':'spotify:user:h4b354yhi63eaht0uncds5h00:collection',
-               'title':'Liked Songs',
+               'uri':'spotify:user:fake:collection',
+               'title':'Close and open',
+               'subtitle':'the home screen',
+               'image_id':"old_home"
+            },
+            {
+               'uri':'spotify:user:fake:collection',
+               'title':'to refresh.',
                'subtitle':'',
-               'image_id':'https://misc.scdn.co/liked-songs/liked-songs-300.png'
-            },
-            {
-               'uri':'spotify:playlist:0CryHan5NsIsI2vsKxwDqD',
-               'title':'Low energy',
-               'subtitle':'lmore377',
-               'image_id':'https://mosaic.scdn.co/300/ab67616d00001e0292317855f9ff83bf88f972f6ab67616d00001e029a7f15b305453fe85768b31fab67616d00001e029c8ef9c9585e3c1bafa39c65ab67616d00001e02d9508aea9edad0274d1b37bd'
-            }
-         ]
-      },
-      {
-         'uri':'spotify:space_item:superbird:superbird-followed-artists',
-         'title':'Artists',
-         'total':3,
-         'children':[
-            {
-               'uri':'spotify:artist:09YODZebNUt2BxaAJyU29j',
-               'title':'Zolik',
-               'subtitle':'',
-               'image_id':'https://i.scdn.co/image/ab67616d00001e0249aee5f2afda43f03680562b'
-            },
-            {
-               'uri':'spotify:artist:2TERX3Wyzpip8d9uw07qYZ',
-               'title':'Bao The Whale',
-               'subtitle':'',
-               'image_id':'https://i.scdn.co/image/ab676161000051747c4219a4a644b92fb1203283'
-            },
-            {
-               'uri':'spotify:artist:2hfoi6OmVRrLmZG1huaD1e',
-               'title':'PIKASONIC',
-               'subtitle':'',
-               'image_id':'https://i.scdn.co/image/ab67616100005174059a0fea21ef77ebcd7b0abe'
-            }
-         ]
-      },
-      {
-         'uri':'spotify:space_item:superbird:superbird-collection-albums',
-         'title':'Albums',
-         'total':3,
-         'children':[
-            {
-               'uri':'spotify:album:0kVtsKXXv0gxHkjxY14jqO',
-               'title':'summer nights',
-               'subtitle':'LilyPichu',
-               'image_id':'https://i.scdn.co/image/ab67616d00001e0228357a05ff6c22ba02e82b7c'
-            },
-            {
-               'uri':'spotify:album:16L5s4keKk2lYJQvcbancm',
-               'title':'Citrus Love: Slice of Life',
-               'subtitle':'Bao The Whale',
-               'image_id':'https://i.scdn.co/image/ab67616d00001e027827895c48fd8598a3507494'
-            },
-            {
-               'uri':'spotify:album:20Ft7SRJ2HjYEauxxFxuAO',
-               'title':'Virtual Paradise',
-               'subtitle':'Alohaii',
-               'image_id':'https://i.scdn.co/image/ab67616d00001e02c10c15fa9551c6e46c568d64'
+               'image_id':"old_home"
             }
          ]
       }
    ]
 }
 
+play_queue = {
+   'next':[
+       {
+         'uid':'null',
+         'uri':'spotify:track:baaaaaaaaaaaaaaaaaaaaa',
+         'name':'song 2 title',
+         'artists':[
+            
+         ],
+         'image_uri':'spotify:image:carthinghax_logo',
+         'provider':'context'
+      }
+   ]   ,
+   'current':{
+      'uid':'null',
+      'uri':'spotify:track:aaaaaaaaaaaaaaaaaaaaab',
+      'name':'Superbird connector',
+      'artists':[
+         
+      ],
+      'image_uri':'spotify:image:carthinghax_logo',
+      'provider':'context'
+   },
+   'previous':[
+      
+   ]
+}
+
 # Player that shows up when normally playing music from Spotify
 player_state_msg ={
-   "context_uri":"spotify:user:<user_id>:collection", # Figuring out
+   "context_uri":"spotify:user:aaaaaaaaaaaaaaaaaaaaaa:collection",
    "is_paused":False,
    "is_paused_bool":False,
    "playback_options":{
       "repeat":0,
       "shuffle":False
    },
-   "playback_position":2500,
+   "playback_position":3000,
    "playback_restrictions":{
       "can_repeat_context":True,
       "can_repeat_track":True,
@@ -186,34 +210,34 @@ player_state_msg ={
       "can_skip_prev":True,
       "can_toggle_shuffle":True
    },
-   "playback_speed":1, # Playback speed multiplier (for progress bar)
+   "playback_speed":0, # Playback speed multiplier (for progress bar). 1 = realtime
    "track":{
       "album":{
             "name":"album name",
-            "uri":"spotify:album:album_id"
+            "uri":"spotify:album:aaaaaaaaaaaaaaaaaaaaaa"
         },
         "artist":{
-            "name":"artist name",
-            "uri":"spotify:artist:artist_id"
+            "name":"is running!",
+            "uri":"spotify:artist:aaaaaaaaaaaaaaaaaaaaaa"
         },
         "artists":[ # Used for multiple artists, 2 for example. First artist should be same as above
             {
-                "name":"artist name",
-                "uri":"spotify:artist:artist_id"
+                "name":"is running!",
+                "uri":"spotify:artist:aaaaaaaaaaaaaaaaaaaaaa"
             },
             {
                 "name":"artist 2",
-                "uri":"spotify:artist:artist_id"
+                "uri":"spotify:artist:aaaaaaaaaaaaaaaaaaaaaa"
             }
         ],
-      "duration_ms":5000,
-      "image_id":"spotify:image:none", # Figuring this out still, used in get_image calls
+      "duration_ms":6000,
+      "image_id":"spotify:image:carthinghax_logo", # Figuring this out still, used in get_image calls
       "is_episode":False,
       "is_podcast":False,
-      "name": "song title",
+      "name": "Superbird connector",
       "saved": True,
-      "uid":"unknown",
-      "uri":"spotify:track:35dIKUaKfV6Oof0v6Dme4j"
+      'uid':'null',
+      "uri":"spotify:track:aaaaaaaaaaaaaaaaaaaaab"
    }
 }
 
@@ -240,14 +264,14 @@ active_state_simple = {
         "can_skip_prev":True,
         "can_toggle_shuffle":True
     },
-    "playback_speed":1,
+    "playback_speed":0,
     "track":{
         "album":{
             "name":"album name",
             "uri":"spotify:album:fake"
         },
         "artist":{
-            "name":"artist name",
+            "name":"is running!",
             "uri":"spotify:artist:fake"
         },
         "artists":[ # Used for multiple artists, 2 for example. First artist should be same as above
@@ -265,7 +289,7 @@ active_state_simple = {
         "image_bytes": "image_bytes", # The current album art sent as a bytearray. Format should be png
         "is_episode":False,
         "is_podcast":False,
-        "name": "song title",
+        "name": "Superbird connector",
         "saved":False,
         "uid":"fake",
         "uri":"spotify:track:fake"
@@ -291,4 +315,65 @@ player_idle = {
       "can_toggle_shuffle":True
    },
    "playback_speed":0
+}
+
+get_presets_resp = {
+   'data':{
+      'presets':{
+         'presets':[
+            {
+               'context_uri':'spotify:playlist:none',
+               'name':'Preset 1',
+               'slot_index':1,
+               'description':'Preset 1 desc.',
+               'image_url':'carthinghax_logo'
+            },
+            {
+               'context_uri':'spotify:playlist:none',
+               'name':'Preset 2',
+               'slot_index':2,
+               'description':'Preset 2 desc.',
+               'image_url':'carthinghax_logo'
+            },
+            {
+               'context_uri':'spotify:playlist:none',
+               'name':'Preset 3',
+               'slot_index':3,
+               'description':'Preset 3 desc.',
+               'image_url':'carthinghax_logo'
+            },
+            {
+               'context_uri':'spotify:playlist:none',
+               'name':'Preset 4',
+               'slot_index':4,
+               'description':'Preset 4 desc.',
+               'image_url':'carthinghax_logo'
+            }
+         ]
+      }
+   }
+}
+
+
+get_children_resp = {
+   'limit':10000,
+   'offset':0,
+   'total':1,
+   'items':[
+      {
+         'id':'spotify:track:aaaaaaaaaaaaaaaaaaaaaa', # Needs to be valid Spotify URI
+         'uri':'spotify:track:aaaaaaaaaaaaaaaaaaaaaa', # Needs to be valid Spotify URI
+         'image_id':'carthinghax_logo',
+         'title':'CarThingHax',
+         'subtitle':'Child of item',
+         'playable':True,
+         'has_children':False,
+         'available_offline':False,
+         'metadata':{
+            'is_explicit_content':False,
+            'is_19_plus_content':False,
+            'duration_ms':160000
+         }
+      }
+   ]
 }

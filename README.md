@@ -1,10 +1,13 @@
 # unamed-superbird-connector
-**This is currently in very early development and has no actual features yet.**  
+**This is currently in very early development and has no actual features yet.**
+**Currently, everything you see on your Superbird when running this is a placeholder**  
 Tool to connect Superbird to the Spotify Web API \
 Currently only tested on Debian
 
 # Current Progress
-Currently this just authenticates Superbird, handles WAMP subscriptions and sends a tip when one is requested
+Most, if not all messages to/from Superbird are implemented.\
+Right now there's still just placeholders everywhere, more work is needed\
+to connect to the Spotify API.
 
 # Prerequisites
 pybluez - https://github.com/pybluez/pybluez (installing from pip is broken, installing from source should work) \
@@ -13,10 +16,15 @@ pybluez - https://github.com/pybluez/pybluez (installing from pip is broken, ins
 umsgpack - https://github.com/vsergeev/u-msgpack-python \
 `pip install u-msgpack-python`
 
+spotipy - https://github.com/spotipy-dev/spotipy \
+`pip install spotipy`
+
+Pillow - https://pypi.org/project/pillow/ \
+`pip install pillow`
+
 # Running
 Simply try running `python3 superbird-server.py` then pair your Superbird. \
-If it was factory reset, skip through the tutorial.
-Once it connects, you'll see "Superbird connector is running!" on the screen.
+Once it connects, you can go through all the menus as if Superbird was connected to your phone.
 
 # Troubleshooting
 If you get any of these errors:
@@ -24,15 +32,14 @@ If you get any of these errors:
 bluetooth.btcommon.BluetoothError: no advertisable device
 bluetooth.btcommon.BluetoothError: [Errno 111] Connection refused
 ```
-they should be resolvable by editing `/etc/systemd/system/dbus-org.bluez.service` and replacing/adding these lines:
+they should be resolvable by editing `/etc/systemd/system/dbus-org.bluez.service` and replacing this line:
 ```
 ExecStart=/usr/libexec/bluetooth/bluetoothd --compat --noplugin=sap
-ExecStartPost=/usr/bin/hciconfig hci0 piscan
 ```
-then running `sudo systemctl daemon-reload && sudo systemctl restart bluetooth.service`.
+then running `sudo systemctl daemon-reload && sudo systemctl restart bluetooth.service && sudo hciconfig hci0 piscan`.
 
 If you start getting `bluetooth.btcommon.BluetoothError: [Errno 13] Permission denied` errors, \
 run `sudo chgrp bluetooth /var/run/sdp` and make sure you're part of the `bluetooth` group.
 
 # Credits
-https://github.com/relative/deskthing - Early Base for this code
+https://github.com/relative/deskthing - Early base for this code

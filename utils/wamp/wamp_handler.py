@@ -6,14 +6,19 @@ import traceback
 import time
 import requests
 import base64
-import utils.wamp_builder as wamp_b
+import utils.wamp.wamp_builder as wamp_b
 import common.sb_common as sb_c
 import common.messages as sb_msgs
 import utils.sp_api as sp_api
+import utils.graphql_handler as gql
+import common.images as sb_img
+from PIL import Image 
 
+# AUTHENTICATE handler: AUTHENTICATE is the response to our "CHALLANGE" message. 
+# We tell Superbird that it passed the challange/response by sending a "WELCOME" message
 def authenticate_handler():
     print('Welcoming Superbird...\n')
-    welcome = wamp_b.build_wamp(sb_c.opCodes.WELCOME, 1, {'roles': {
+    resp = wamp_b.build_wamp(sb_c.opCodes.WELCOME, 1, {'roles': {
                                                 'dealer': {},
                                                 'broker': {}},
                                                 'app_version': '8.9.42.575',
@@ -22,64 +27,43 @@ def authenticate_handler():
                                                 'authrole': '',
                                                 'authmethod': '',
                                                 'date_time': datetime.datetime.now().isoformat()})
-    return welcome
+    return True, resp, False, []
 
 
 # HELLO handler: When Superbird sends a "HELLO" WAMP message, we reply with a "CHALLANGE" message
 # Luckily, Superbird doesn't check the challange/response process so we can just throw whatever we want
 # at it, claim it passed auth and it'll be happy with that. 
 # We also create the superbird_session.json file, which include(s) info like serial number, active subscriptions, etc.
-def hello_handler(json_in):
+def hello_handler(msg):
+    json_in = msg[2]
+    with_event = False
+    event = []
     print("Superbird authenticating:")
     print("Firmware:", json_in['info']['version'])
     print("Serial No:", json_in['info']['device_identifier'])
     try:
         f = open("superbird_session.json", "w")
-        json.dump({"serial": json_in['info']['device_identifier'], "subscriptions": {}, "vol_supported": False, "vol": 50}, f, indent=4)
+        json.dump({"serial": json_in['info']['device_identifier'], "subscriptions": {}, "vol_supported": True, "vol": 50, "pub_id": 1}, f, indent=4)
         f.close()
     except Exception:
         print(traceback.format_exc())
     challange_str = {'challenge': '{"nonce":"dummy_nonce","authid":"' + json_in['info']['id'] + '","timestamp":"' + datetime.datetime.now().isoformat() + '","authmethod":"wampcra"}'}
-    auth = [sb_c.opCodes.CHALLENGE.value, 'wampcra', challange_str]
-    return auth
+    resp = [sb_c.opCodes.CHALLENGE.value, 'wampcra', challange_str]
+    return True, resp, with_event, event
 
 # Function handler: Superbird will send a "CALL" WAMP message when it wants something done.
 # If needed, we respond with a "RESULT" message 
-handledFuncs = ["com.spotify.superbird.pitstop.log",
-                "com.spotify.superbird.instrumentation.log",
-                "com.spotify.superbird.ota.check_for_updates",
-                "com.spotify.superbird.permissions",
-                "com.spotify.superbird.graphql",
-                "com.spotify.superbird.setup.get_state",
-                "com.spotify.superbird.register_device",
-                "com.spotify.superbird.tts.speak",
-                "com.spotify.superbird.voice.data",
-                "com.spotify.superbird.voice.start_session",
-                "com.spotify.superbird.remote_configuration",
-                "com.spotify.superbird.voice.cancel_session",
-                "com.spotify.superbird.set_active_app",
-                "com.spotify.superbird.instrumentation.request",
-                "com.spotify.superbird.crashes.report",
-                "com.spotify.superbird.tipsandtricks.get_tips_and_tricks",
-                "com.spotify.superbird.get_home",
-                "com.spotify.get_thumbnail_image"
-                ]
-
-controlFuncs = ["com.spotify.superbird.volume.volume_up",
-                "com.spotify.superbird.volume.volume_down",
-                "com.spotify.superbird.pause",
-                "com.spotify.superbird.resume",
-                "com.spotify.superbird.skip_prev",
-                "com.spotify.superbird.skip_next"]
 
 def function_handler(msg):
     try:
+        with_event = False
+        event = []
         request_id = msg[1]
         wamp_options = msg[2]
         called_func = msg[3]
         func_args = msg[4]
         func_argskw = msg[5]
-        if called_func in handledFuncs:
+        try:
             match called_func:
                 case "com.spotify.superbird.pitstop.log": # Pitstop log - some logs are very long
                     if len(str(func_argskw)) > 128:
@@ -114,15 +98,11 @@ def function_handler(msg):
                 # Hard but not impossible and there's enough time before December
                 case "com.spotify.superbird.ota.check_for_updates": # Update check
                     print("Superbird: Checked for updates")
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {'result': []}) 
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})        
 
                 case "com.spotify.superbird.graphql": # Proper handling of this should be implemented at some point.
                     print("Superbird graphql: ", func_argskw)
-                    if "tipsOnDemand" in str(func_argskw):
-                        print("Tips requested")
-                        payload = {'data': {'tipsOnDemand': {'tips': [{'id': 1, 'title': ':3', 'description': 'Hello CarThingHax!'}]}}}
-                    else:
-                        payload = {}
+                    payload = gql.graphql_resp(func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, payload)
                 
                 case "com.spotify.superbird.permissions": # The only permission seems to be can_use_superbird
@@ -146,7 +126,8 @@ def function_handler(msg):
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.voice.data":
-                    print("Superbird: Sending voice data")
+                    print("Superbird: Sending voice data, writing to audio.ogg")
+                    open("audio.ogg", "ab").write(func_argskw['voice_data'])
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.voice.cancel_session":
@@ -163,62 +144,96 @@ def function_handler(msg):
 
                 case "com.spotify.superbird.tipsandtricks.get_tips_and_tricks":
                     print("Superbird: Get tips n' tricks")
-                    tips_json = {'result': [{'id': 1, 'title': 'Hello there!', 'description': '“There should be a tip somewhere around here...”', 'action': 'PLAY_PLAYLIST_DAILYDRIVE'}]}
+                    tips_json = {'result': [{'id': 1, 'title': 'Hello there!', 'description': '“There should be a tip somewhere around here...”', 'action': ''}]}
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, tips_json)
 
-                case "com.spotify.superbird.get_home":
-                    print("Superbird: Get Home")
-                    home_json = sb_msgs.homescreen
+                case "com.spotify.superbird.get_home": # Only gets called after a factory reset. After reboot, it's handled by graphql 
+                    print("Superbird: Get old home")
+                    home_json = sb_msgs.old_homescreen
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, home_json)
                 
+                case "com.spotify.get_image":
+                    print("Superbird: Get image:", func_argskw['id'])
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, sb_img.download_img(func_argskw['id']))
+
                 case "com.spotify.get_thumbnail_image":
-                    print("Superbird: Get tumbnail:", func_argskw)
-                    img_id = str(func_argskw['id']).split("spotify:image:",1)[1]
-                    image = base64.b64encode(requests.get("https://i.scdn.co/image/" + img_id).content).decode('ascii')
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {'image_data': image, 'width': 300, 'height': 300})
-                    print(resp)
-            return True, resp
+                    print("Superbird: Get thumbnail:", func_argskw)
+                    img_id = str(func_argskw['id'])
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, sb_img.download_img(func_argskw['id'], True))
+                
+                case "com.spotify.set_saved":
+                    print("Superbird: Set saved for", func_argskw['uri'], "to", func_argskw["saved"])
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
+                case "com.spotify.get_saved":
+                    print("Superbird: Check if saved")
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {'uri': func_argskw['id'], 'saved': False, 'can_save': True})
 
+                case "com.spotify.superbird.presets.get_presets": # Only gets called after a factory reset. After reboot, it's handled by graphql 
+                    print("Superbird: Get presets")
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
+                
+                case "com.spotify.get_children_of_item":
+                    print("Superbird: Get children of item")
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, sb_msgs.get_children_resp)
+                
+                case "com.spotify.superbird.play_uri":
+                    context = ""
+                    if "skip_to_uri" in func_argskw:
+                        context = " in context" + str(func_argskw["uri"])
+                        uri = func_argskw["skip_to_uri"]
+                    else:
+                        uri = str(func_argskw["uri"])
+                    print("Superbird: Play uri " + uri + context)
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
+                
+                case "com.spotify.superbird.set_shuffle":
+                    print("Superbird: Set shuffle to", func_argskw['shuffle'])
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
-        elif called_func in controlFuncs:
-            match called_func:
                 case "com.spotify.superbird.volume.volume_up":
+                    # sub_id = session["subscriptions"]["com.spotify.superbird.volume.volume_state"]["sub_id"]
                     print("Superbird: Volume Up")
-                    print(func_argskw)
+                    # event = wamp_b.build_wamp_event(sub_id, pub_id, {'volume': .5, 'volume_steps': 25})
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.volume.volume_down":
                     print("Superbird: Volume Down")
-                    print(func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.pause":
                     print("Superbird: Pause media")
-                    sp_api.sp.pause_playback()
+                    #sp_api.sp.pause_playback()
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.resume":
                     print("Superbird: Resume media")
-                    sp_api.sp.start_playback()
+                    # sp_api.sp.start_playback()
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.skip_prev":
                     print("Superbird: Previous Track")
-                    sp_api.sp.previous_track()
+                    # sp_api.sp.previous_track()
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.skip_next":
                     print("Superbird: Next track")
-                    sp_api.sp.next_track()
+                    # sp_api.sp.next_track()
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
-            time.sleep(1) # Allow time for API to catch up
-            return True, resp
+                    
+                case "com.spotify.queue_spotify_uri":
+                    print("Superbird: Add to queue. URI:", func_argskw['uri'])
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
-        else: # Calls that don't have a handler just get an empty response and get printed to console
-            print("Superbird: Unhandled call:", called_func, "\nRequest ID:", request_id, "\nWAMP Options:", wamp_options, "\nArguments:", func_args, "\nnArgumentsKw:", func_argskw, '\n')
-            resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
-            return True, resp
+                case _: # Calls that don't have a handler just get an empty response and get printed to console
+                    print("Superbird: Unhandled call:", called_func, "\nRequest ID:", request_id, "\nWAMP Options:", wamp_options, "\nArguments:", func_args, "\nnArgumentsKw:", func_argskw, '\n')
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
+
+        except Exception: 
+            traceback.print_exc()
+
+        return True, resp, with_event, event
+    
     except Exception:
        print(traceback.format_exc())
 
@@ -233,7 +248,9 @@ def subscribe_handler(msg, unsub = False):
         request_id = msg[1]
         wamp_options = msg[2]
         sub_target = msg[3]
-        
+        with_event = False
+        event = []
+
         f = open('superbird_session.json', 'r+')
         session = json.load(f)
         
@@ -247,8 +264,8 @@ def subscribe_handler(msg, unsub = False):
                 json.dump(session, f)
                 f.truncate()
                 f.close()
-                wamp_subbed = wamp_b.build_wamp_subbed(request_id, sub_id)
-                return True, wamp_subbed
+                resp = wamp_b.build_wamp_subbed(request_id, sub_id)
+                return True, resp, with_event, event
             except Exception:
                 print(traceback.format_exc())
         else:

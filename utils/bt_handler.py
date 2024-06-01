@@ -21,9 +21,18 @@ def get_msg_with_len(sock, n):
         data.extend(packet)
     return data
 
+# Sometimes messages are too big so we chop em up
+def send_chunks(data, sock, chunk_size):
+  for i in range(0, len(data), chunk_size):
+    chunk = data[i:i+chunk_size]
+    sock.send(chunk)
+
 # Pack messages into MessagePack format and send them to Superbird
 def sendMsg(data_in, client_sock):
-   data = umsgpack.packb(data_in)
-   data_len = struct.pack('>I', len(data))
-   data = data_len + data
-   client_sock.send(data)
+    data = umsgpack.packb(data_in)
+    data_len = struct.pack('>I', len(data))
+    data = data_len + data
+    if len(data) >= 650:
+        send_chunks(data, client_sock, 650)
+    else:
+        client_sock.send(data)

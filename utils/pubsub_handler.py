@@ -3,11 +3,17 @@ import os
 import json
 import traceback
 import utils.sp_api as sp_api
-import utils.wamp_builder as wamp_b
+import utils.wamp.wamp_builder as wamp_b
 import common.sb_common as sb_c
 import utils.bt_handler as bt_handler
 import common.messages as sb_msgs
 # Goes through subscriptions and sends EVENTS as needed
+
+quiet = True
+
+def print(input):
+    if not quiet:
+        print(input)
 
 pub_id = 0
 sock = None
@@ -19,7 +25,6 @@ def subHandlerThread(client_sock):
     while not os.path.exists("superbird_session.json"):
         time.sleep(1)
     print("Sub: Session json found")
-    time.sleep(2)
     while True:
         try:
             update_status()
@@ -27,10 +32,9 @@ def subHandlerThread(client_sock):
             s_json = json.load(s_json_file)
             for sub_name, sub_info in s_json['subscriptions'].items():
                 sendSubMsg(client_sock, sub_name, sub_info)
-                
-                time.sleep(1)
                 #print(sub_name)
                 #print(sub_info)
+            time.sleep(1)
         except Exception:
             print(traceback.format_exc())
 
@@ -39,18 +43,19 @@ def update_status():
     global sock
     s_json_file = open("superbird_session.json") 
     s_json = json.load(s_json_file)
+    
     for sub_name, sub_info in s_json['subscriptions'].items():
         match sub_name:
             case "com.spotify.superbird.player_state": # Different fw versions sub to different state events?
                 print("Sub: Send player state")
                 pub_id += 1
-                info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, sb_msgs.active_state_simple)
+                info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, sb_msgs.player_state_msg)
                 bt_handler.sendMsg(info, sock)
             
             case "com.spotify.player_state": # Different fw versions sub to different state events?
                 print("Sub: Send player state")
                 pub_id += 1
-                info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, sb_msgs.active_state_simple)
+                info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, sb_msgs.player_state_msg)
                 bt_handler.sendMsg(info, sock)
     
 # These were only seen once in packet captures
@@ -93,6 +98,12 @@ def sendSubMsg(client_sock, sub_name, sub_info):
         case "com.spotify.superbird.volume.volume_state":
             print("Sub: Send volume")
             pub_id += 1
-            print(int(s_json['vol'])/100)
             info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, {'volume': int(s_json['vol'])/100, 'volume_steps': 25})
             bt_handler.sendMsg(info, client_sock)
+        
+        case "com.spotify.play_queue":
+            print("Sub: Send queue")
+            pub_id += 1
+            info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, sb_msgs.play_queue)
+            bt_handler.sendMsg(info, client_sock)
+    

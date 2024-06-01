@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 import bluetooth
 import umsgpack
-import struct
-import datetime
 import os
 import threading
 import traceback
 import common.sb_common as sb_c
 import utils.bt_handler as bt_handler
-import utils.wamp_handler as wamp_h
+import utils.wamp.wamp_handler as wamp_h
 import utils.pubsub_handler
+
 server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 server_sock.bind(("", bluetooth.PORT_ANY))
 server_sock.listen(1) 
@@ -23,30 +22,26 @@ except: pass
 # Un-MessagePack messages and send them to their respective handlers
 def processMsg(data: bytearray):
     try:
+        send = False
+        with_event = False
         msg = umsgpack.unpackb(data)
         msg_opcode = sb_c.opCodes(msg[0])
+                        
         match msg_opcode:
             case sb_c.opCodes.HELLO: # More info in superbird_util.py
-                json = msg[2]
-                bt_handler.sendMsg(wamp_h.hello_handler(json), client_sock)
-
-            # The AUTHENTICATE message is the response to our "CHALLANGE" message. 
-            # We tell Superbird that it passed the challange/response by sending a "WELCOME" message
+                send, resp, with_event, event = wamp_h.hello_handler(msg)
             case sb_c.opCodes.AUTHENTICATE:
-                
-                bt_handler.sendMsg(wamp_h.authenticate_handler(), client_sock)
-
+                send, resp, with_event, event = wamp_h.authenticate_handler()
             case sb_c.opCodes.CALL: # More info in superbird_util.py
-                send, resp = wamp_h.function_handler(msg)
-                if send:
-                    bt_handler.sendMsg(resp, client_sock)
-
+                send, resp, with_event, event = wamp_h.function_handler(msg)
             case sb_c.opCodes.SUBSCRIBE: # More info in superbird_util.py
-                send, resp = wamp_h.subscribe_handler(msg)
-                if send:
-                    bt_handler.sendMsg(resp, client_sock)
+                send, resp, with_event, event = wamp_h.subscribe_handler(msg)
             case _:
                 print("Unhandled opcode:", msg_opcode, " Msg:", msg)
+        if send:
+            bt_handler.sendMsg(resp, client_sock)
+        if with_event: # Sometimes we also need to send an event
+            bt_handler.sendMsg(event, client_sock)
     except Exception:
         print(traceback.format_exc())
         print("Unknown Packet.\n")
@@ -57,6 +52,8 @@ def processMsg(data: bytearray):
 bluetooth.advertise_service(server_sock, "Superbird", service_id=uuid, service_classes=[uuid, bluetooth.SERIAL_PORT_CLASS], profiles=[bluetooth.SERIAL_PORT_PROFILE])
 print("Waiting for connection on RFCOMM channel", port)
 client_sock, client_info = server_sock.accept()
+
+
 
 # Start subscription handler thread
 sub_handler_thread = threading.Thread(target=utils.pubsub_handler.subHandlerThread, args=(client_sock,), daemon=True)
