@@ -6,8 +6,7 @@ Currently only tested on Debian
 
 # Current Progress
 Most, if not all messages to/from Superbird are implemented.\
-Right now there's still just placeholders everywhere, more work is needed\
-to connect to the Spotify API.
+Right now there's still just placeholders everywhere, more work is needed to connect to the Spotify API.
 
 # Prerequisites
 pybluez - https://github.com/pybluez/pybluez (installing from pip is broken, installing from source should work) \
