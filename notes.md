@@ -200,7 +200,7 @@ then immediately follows up with the following message as an EVENT to `com.spoti
          'ttsPrompt':'<speak xml:lang="en-US">Sure, 52 Hearts <break time="100ms"/> plus other search results.</speak>',
          'content_id':'spotify:space_item:superbird:superbird-voice',
          'spotify_active':True,
-         'ttsUrl': 'Omitted just in case. Spotify does TTS using ReadSpeaker and this url points to the TTS mp3',
+         'ttsUrl': 'Omitted just in case. Spotify does TTS on their servers using ReadSpeaker and this url points to the TTS mp3',
          'query':'testing',
          'action':'SHOW_TRACK',
          'intent':'SHOW',
