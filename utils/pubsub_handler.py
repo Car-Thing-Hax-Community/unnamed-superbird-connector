@@ -2,7 +2,6 @@ import time
 import os
 import json
 import traceback
-import utils.sp_api as sp_api
 import utils.wamp.wamp_builder as wamp_b
 import common.sb_common as sb_c
 import utils.bt_handler as bt_handler
@@ -10,10 +9,10 @@ import common.messages as sb_msgs
 # Goes through subscriptions and sends EVENTS as needed
 
 quiet = True
-
+print_real = print
 def print(input):
     if not quiet:
-        print(input)
+        print_real(input)
 
 pub_id = 0
 sock = None
@@ -36,7 +35,10 @@ def subHandlerThread(client_sock):
                 #print(sub_info)
             time.sleep(1)
         except Exception:
-            print(traceback.format_exc())
+            print_real("\n\n~~~~~ Exception Start ~~~~~")
+            print_real(traceback.format_exc())
+            print_real("~~~~~  Exception End  ~~~~~\n")
+
 
 def update_status():
     global pub_id

@@ -43,8 +43,9 @@ def processMsg(data: bytearray):
         if with_event: # Sometimes we also need to send an event
             bt_handler.sendMsg(event, client_sock)
     except Exception:
-        print(traceback.format_exc())
-        print("Unknown Packet.\n")
+        print("\n\n~~~~~ Exception Start ~~~~~")
+        traceback.print_exc()
+        print("~~~~~  Exception End  ~~~~~\n")
         pass
 
 
@@ -68,6 +69,11 @@ try:
 except OSError:
     pass
 except KeyboardInterrupt:
+    pass
+except Exception:
+    print("\n\n~~~~~ Exception Start ~~~~~")
+    traceback.print_exc()
+    print("~~~~~  Exception End  ~~~~~\n")
     pass
 
 client_sock.close()

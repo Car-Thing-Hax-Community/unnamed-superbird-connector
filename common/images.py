@@ -34,7 +34,10 @@ def download_img(url, thumbnail=False):
         resp = {'image_data': img_b64, 'width': w, 'height': h}
         return resp
     except Exception:
-        print(traceback.format_exc())
+        print("\n\n~~~~~ Exception Start ~~~~~")
+        traceback.print_exc()
+        print("~~~~~  Exception End  ~~~~~\n")
+
 
 
 

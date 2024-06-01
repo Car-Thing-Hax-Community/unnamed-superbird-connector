@@ -46,7 +46,10 @@ def hello_handler(msg):
         json.dump({"serial": json_in['info']['device_identifier'], "subscriptions": {}, "vol_supported": True, "vol": 50, "pub_id": 1}, f, indent=4)
         f.close()
     except Exception:
-        print(traceback.format_exc())
+        print("\n\n~~~~~ Exception Start ~~~~~")
+        traceback.print_exc()
+        print("~~~~~  Exception End  ~~~~~\n")
+
     challange_str = {'challenge': '{"nonce":"dummy_nonce","authid":"' + json_in['info']['id'] + '","timestamp":"' + datetime.datetime.now().isoformat() + '","authmethod":"wampcra"}'}
     resp = [sb_c.opCodes.CHALLENGE.value, 'wampcra', challange_str]
     return True, resp, with_event, event
@@ -204,7 +207,7 @@ def function_handler(msg):
                 case "com.spotify.superbird.pause":
                     print("Superbird: Pause media")
                     #sp_api.sp.pause_playback()
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
+                    #resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.resume":
                     print("Superbird: Resume media")
@@ -226,16 +229,21 @@ def function_handler(msg):
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case _: # Calls that don't have a handler just get an empty response and get printed to console
-                    print("Superbird: Unhandled call:", called_func, "\nRequest ID:", request_id, "\nWAMP Options:", wamp_options, "\nArguments:", func_args, "\nnArgumentsKw:", func_argskw, '\n')
+                    print("\n\nSuperbird: Unhandled call:", called_func, "\nRequest ID:", request_id, "\nWAMP Options:", wamp_options, "\nArguments:", func_args, "\nnArgumentsKw:", func_argskw, '\n')
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
-        except Exception: 
+        except Exception:
+            print("\n\n~~~~~ Exception Start ~~~~~")
             traceback.print_exc()
+            print("~~~~~  Exception End  ~~~~~\n")
+
 
         return True, resp, with_event, event
     
     except Exception:
-       print(traceback.format_exc())
+       print("\n\n~~~~~ Exception Start ~~~~~")
+       traceback.print_exc()
+       print("~~~~~  Exception End  ~~~~~\n")
 
 # Subscription handler: Superbird sends a SUBSCRIBE request, we send back a SUBSCRIBED message that
 # contains a subscription ID that is used in EVENT messages to map back to the original request.
@@ -271,4 +279,6 @@ def subscribe_handler(msg, unsub = False):
         else:
             print("Superbird already subscribed to", sub_target, "with ID:", session["subscriptions"][sub_target]["sub_id"])
     except Exception:
-        print(traceback.format_exc())
+        print("\n\n~~~~~ Exception Start ~~~~~")
+        traceback.print_exc()
+        print("~~~~~  Exception End  ~~~~~\n")
