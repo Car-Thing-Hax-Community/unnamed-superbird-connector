@@ -9,12 +9,12 @@ import base64
 import utils.wamp.wamp_builder as wamp_b
 import common.sb_common as sb_c
 import common.messages as sb_msgs
-import utils.graphql_handler as gql
+import utils.handlers.graphql_handler as gql
 import common.images as sb_img
 from PIL import Image 
 
-# AUTHENTICATE handler: AUTHENTICATE is the response to our "CHALLANGE" message. 
-# We tell Superbird that it passed the challange/response by sending a "WELCOME" message
+# AUTHENTICATE handler: AUTHENTICATE is the response to our "CHALLENGE" message. 
+# We tell Superbird that it passed the challenge/response by sending a "WELCOME" message
 def authenticate_handler():
     print('Welcoming Superbird...\n')
     resp = wamp_b.build_wamp(sb_c.opCodes.WELCOME, 1, {'roles': {
@@ -29,8 +29,8 @@ def authenticate_handler():
     return True, resp, False, []
 
 
-# HELLO handler: When Superbird sends a "HELLO" WAMP message, we reply with a "CHALLANGE" message
-# Luckily, Superbird doesn't check the challange/response process so we can just throw whatever we want
+# HELLO handler: When Superbird sends a "HELLO" WAMP message, we reply with a "CHALLENGE" message
+# Luckily, Superbird doesn't check the challenge/response process so we can just throw whatever we want
 # at it, claim it passed auth and it'll be happy with that. 
 # We also create the superbird_session.json file, which include(s) info like serial number, active subscriptions, etc.
 def hello_handler(msg):
@@ -49,8 +49,8 @@ def hello_handler(msg):
         traceback.print_exc()
         print("~~~~~  Exception End  ~~~~~\n")
 
-    challange_str = {'challenge': '{"nonce":"dummy_nonce","authid":"' + json_in['info']['id'] + '","timestamp":"' + datetime.datetime.now().isoformat() + '","authmethod":"wampcra"}'}
-    resp = [sb_c.opCodes.CHALLENGE.value, 'wampcra', challange_str]
+    challenge_str = {'challenge': '{"nonce":"dummy_nonce","authid":"' + json_in['info']['id'] + '","timestamp":"' + datetime.datetime.now().isoformat() + '","authmethod":"wampcra"}'}
+    resp = [sb_c.opCodes.CHALLENGE.value, 'wampcra', challenge_str]
     return True, resp, with_event, event
 
 # Function handler: Superbird will send a "CALL" WAMP message when it wants something done.
@@ -74,7 +74,7 @@ def function_handler(msg):
                         print("Superbird pitstop log:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                     
-                case "com.spotify.superbird.instrumentation.log": # Instrumentaion log - some logs are very long
+                case "com.spotify.superbird.instrumentation.log": # Instrumentation log - some logs are very long
                     if len(str(func_argskw)) > 128:
                         print("Superbird instrumentation log: *longer than 128* Length:", len(str(func_argskw)))
                     else:
@@ -182,7 +182,7 @@ def function_handler(msg):
                 case "com.spotify.superbird.play_uri":
                     context = ""
                     if "skip_to_uri" in func_argskw:
-                        context = " in context" + str(func_argskw["uri"])
+                        context = " in context " + str(func_argskw["uri"])
                         uri = func_argskw["skip_to_uri"]
                     else:
                         uri = str(func_argskw["uri"])

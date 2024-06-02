@@ -5,9 +5,9 @@ import os
 import threading
 import traceback
 import common.sb_common as sb_c
-import utils.bt_handler as bt_handler
+import utils.handlers.bt_handler as bt_handler
 import utils.wamp.wamp_handler as wamp_h
-import utils.pubsub_handler
+import utils.handlers.pubsub_handler
 
 server_sock = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
 server_sock.bind(("", bluetooth.PORT_ANY))
@@ -57,7 +57,7 @@ client_sock, client_info = server_sock.accept()
 
 
 # Start subscription handler thread
-sub_handler_thread = threading.Thread(target=utils.pubsub_handler.subHandlerThread, args=(client_sock,), daemon=True)
+sub_handler_thread = threading.Thread(target=utils.handlers.pubsub_handler.subHandlerThread, args=(client_sock,), daemon=True)
 sub_handler_thread.start()
 
 try:

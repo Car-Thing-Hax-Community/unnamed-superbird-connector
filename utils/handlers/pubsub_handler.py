@@ -4,7 +4,7 @@ import json
 import traceback
 import utils.wamp.wamp_builder as wamp_b
 import common.sb_common as sb_c
-import utils.bt_handler as bt_handler
+import utils.handlers.bt_handler as bt_handler
 import common.messages as sb_msgs
 # Goes through subscriptions and sends EVENTS as needed
 

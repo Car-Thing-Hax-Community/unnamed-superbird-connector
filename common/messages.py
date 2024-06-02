@@ -131,6 +131,19 @@ graphql_homescreen = {
                      'image_id':'carthinghax_logo'
                   }
                ]
+            },
+            {
+               'title':'Devices',
+               'id':'devices',
+               'total':1,
+               'children':[
+                  {
+                     'uri':'spotify:album:fake',
+                     'title':'Devices',
+                     'subtitle':'Spotify Connect',
+                     'image_id':'carthinghax_logo'
+                  }
+               ]
             }
          ]
       }
@@ -242,7 +255,7 @@ player_state_msg ={
 }
 
 # Simple player that would show up when playing music from another app
-active_state_simple = {
+player_state_simple = {
     "currently_active_application":{
         "id":"com.example",
         "name":"Example app"
