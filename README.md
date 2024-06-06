@@ -1,4 +1,4 @@
-# unamed-superbird-connector
+# unnamed-superbird-connector
 **This is currently in very early development and has no actual features yet.**
 **Currently, everything you see on your Superbird when running this is a placeholder**  
 Tool to connect Superbird to the Spotify Web API \
