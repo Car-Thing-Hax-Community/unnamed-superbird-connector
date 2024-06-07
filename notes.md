@@ -241,3 +241,7 @@ Sometimes the app will send other EVENTs like this: (In this example, I said 'sa
 }
 ```
 Intent and action handler code can be found here: [https://github.com/Merlin04/superbird-webapp/tree/modded/component/VoiceConfirmation](https://github.com/Merlin04/superbird-webapp/tree/modded/component/VoiceConfirmation)
+
+## Potential future features
+- Phone calls - I thought phone calls were handled via some wierd iOS specific bluetooth thing but it looks like they're still handled by the Spotify app
+https://github.com/Merlin04/superbird-webapp/blob/5781976ec7fb56aceeedc7c4bcb7c83b70067636/store/AndroidPhoneCallStore.ts#L41
