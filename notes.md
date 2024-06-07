@@ -24,8 +24,9 @@ This is sent as an EVENT to `com.spotify.superbird.voice.session_updates`\
 When speech-to-text is done, `isFinal` and `isEndOfSpeech` get set to True and Superbird displays the transcript.\
 I'm currently not 100% how search results are added to the home screen, but it's likely with the message below.
 
-When Spotify starts speaking, it sends `{'state': 'STARTED'}` as an EVENT to `com.spotify.superbird.voice.session_updates`\
-then immediately follows up with the following message as an EVENT to `com.spotify.superbird.voice.session_updates`
+When Spotify starts speaking, it sends `{'state': 'STARTED'}` as an EVENT to `com.spotify.superbird.tts.state`.
+
+When results are ready, Spotify sends following message as an EVENT to `com.spotify.superbird.voice.session_updates`
 ```
 {
    'session_id':'2024-06-01T09_04_33.963Z.ogg',
@@ -210,3 +211,33 @@ then immediately follows up with the following message as an EVENT to `com.spoti
 }
 ```
 After it's done speaking, it sends `{'state': 'FINISHED'}` as an event to `com.spotify.superbird.voice.session_updates`
+
+Sometimes the app will send other EVENTs like this: (In this example, I said 'save this song')
+```
+{
+   'session_id':'2024-06-07T05_32_09.977Z.ogg',
+   'utterance_id':'3366b181-3147-46d9-ab6b-bbf87ac1fe1c',
+   'message':'NluResponse',
+   'nlu':{
+      'body':[
+         
+      ],
+      'custom':{
+         'slots':{
+            'requestedEntityType':[
+               'song'
+            ]
+         },
+         'ttsPrompt':'<speak xml:lang="en-US">Saved</speak>',
+         'content_id':'spotify:space_item:superbird:superbird-voice',
+         'spotify_active':True,
+         'ttsUrl':'Omitted just in case. Spotify does TTS on their servers using ReadSpeaker and this url points to the TTS mp3',
+         'query':'save this song',
+         'action':'SAVE_TO_COLLECTION_TRACK',
+         'intent':'ADD_TO_COLLECTION',
+         'connect_action_taken':False
+      }
+   }
+}
+```
+Intent and action handler code can be found here: [https://github.com/Merlin04/superbird-webapp/tree/modded/component/VoiceConfirmation](https://github.com/Merlin04/superbird-webapp/tree/modded/component/VoiceConfirmation)
