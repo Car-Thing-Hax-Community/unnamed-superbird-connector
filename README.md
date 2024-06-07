@@ -45,4 +45,5 @@ If you start getting `bluetooth.btcommon.BluetoothError: [Errno 13] Permission d
 run `sudo chgrp bluetooth /var/run/sdp` and make sure you're part of the `bluetooth` group.
 
 # Credits
+https://github.com/Merlin04/superbird-webapp - Lots of communication is handled by the webapp. The reconstructed code makes it easy to figure out how to handle messages 
 https://github.com/relative/deskthing - Early base for this code
