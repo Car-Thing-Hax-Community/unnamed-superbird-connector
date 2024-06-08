@@ -13,9 +13,6 @@ Right now there's still just placeholders everywhere, more work is needed to con
 # Prerequisites
 Python 3.10+ - Connector makes heavy use of match case statements which were introduced in 3.10
 
-pybluez - https://github.com/pybluez/pybluez (installing from pip is broken, installing from source should work) \
-``pip install git+https://github.com/pybluez/pybluez.git#egg=pybluez``
-
 umsgpack - https://github.com/vsergeev/u-msgpack-python \
 `pip install u-msgpack-python`
 
