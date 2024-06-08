@@ -6,3 +6,4 @@ superbird_secrets.py
 .cache
 audio.ogg
 sp_api.py
+.vscode

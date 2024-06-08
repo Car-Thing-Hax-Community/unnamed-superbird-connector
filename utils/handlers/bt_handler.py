@@ -1,6 +1,8 @@
 
 import struct
 import umsgpack
+import time
+import common.sb_common as sb_c
 # Bluetooth logic for sending, receiving, serializing, etc.
 
 # Messages to/from Superbird have a 4 byte length header, then the rest of the message is MessagePack
@@ -26,13 +28,16 @@ def send_chunks(data, sock, chunk_size):
   for i in range(0, len(data), chunk_size):
     chunk = data[i:i+chunk_size]
     sock.send(chunk)
+    time.sleep(.01)
 
 # Pack messages into MessagePack format and send them to Superbird
 def sendMsg(data_in, client_sock):
+    sb_c.superbird_session["sending"] = True
     data = umsgpack.packb(data_in)
     data_len = struct.pack('>I', len(data))
     data = data_len + data
-    if len(data) >= 650:
-        send_chunks(data, client_sock, 650)
+    if len(data) >= 990:
+        send_chunks(data, client_sock, 990)
     else:
         client_sock.send(data)
+    sb_c.superbird_session["sending"] = False

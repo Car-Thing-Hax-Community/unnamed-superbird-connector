@@ -16,6 +16,14 @@ def build_wamp_subbed(request_id, sub_id, opcode = sb_common.opCodes.SUBSCRIBED)
     wamp = [opcode.value, request_id, sub_id]
     return wamp
 
+
+# UNSUBSCRIBED message builder
+# When Superbird unsubscribes from something, we just need to acknowledge the request
+# and remove the subscription from superbird_session
+def build_wamp_unsubbed(request_id, opcode = sb_common.opCodes.UNSUBSCRIBED):
+    wamp = [opcode.value, request_id]
+    return wamp
+
 # EVENT message builder
 # When we want to send an event we include a pub_id that maps back to the original subscription
 # Example: We want to tell Superbird that playback has paused so we send a playload containing some info

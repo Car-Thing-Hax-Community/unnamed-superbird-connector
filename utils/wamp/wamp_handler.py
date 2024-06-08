@@ -1,17 +1,13 @@
 # This file handles incoming WAMP messages
 
-import json
 import datetime
 import traceback
-import time
-import requests
-import base64
 import utils.wamp.wamp_builder as wamp_b
 import common.sb_common as sb_c
 import common.messages as sb_msgs
 import utils.handlers.graphql_handler as gql
 import common.images as sb_img
-from PIL import Image 
+import utils.handlers.update_handler as updater
 
 # AUTHENTICATE handler: AUTHENTICATE is the response to our "CHALLENGE" message. 
 # We tell Superbird that it passed the challenge/response by sending a "WELCOME" message
@@ -32,7 +28,7 @@ def authenticate_handler():
 # HELLO handler: When Superbird sends a "HELLO" WAMP message, we reply with a "CHALLENGE" message
 # Luckily, Superbird doesn't check the challenge/response process so we can just throw whatever we want
 # at it, claim it passed auth and it'll be happy with that. 
-# We also create the superbird_session.json file, which include(s) info like serial number, active subscriptions, etc.
+# We also fill the superbird_session variable, which include(s) info like serial number, active subscriptions, etc.
 def hello_handler(msg):
     json_in = msg[2]
     with_event = False
@@ -41,9 +37,7 @@ def hello_handler(msg):
     print("Firmware:", json_in['info']['version'])
     print("Serial No:", json_in['info']['device_identifier'])
     try:
-        f = open("superbird_session.json", "w")
-        json.dump({"serial": json_in['info']['device_identifier'], "subscriptions": {}, "vol_supported": True, "vol": 50, "pub_id": 1}, f, indent=4)
-        f.close()
+        sb_c.superbird_session = {"serial": json_in['info']['device_identifier'], "subscriptions": {}, "vol_supported": True, "vol": 50, "pub_id": 1, "ota_ready": False, "ota_active": False, "sending": False}
     except Exception:
         print("\n\n~~~~~ Exception Start ~~~~~")
         traceback.print_exc()
@@ -95,12 +89,15 @@ def function_handler(msg):
                         print("Superbird crash report:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
-                # For now we say there's no update. Maybe we can implement updates at some point?
-                # Would require dumping every possible update from Spotify bc they're signed
-                # Hard but not impossible and there's enough time before December
                 case "com.spotify.superbird.ota.check_for_updates": # Update check
                     print("Superbird: Checked for updates")
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})        
+                    ret = updater.check(func_argskw)
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, ret)        
+
+                case "com.spotify.superbird.ota.transfer":
+                    print("Superbird: Get OTA chunk")
+                    ret = updater.send_chunk(func_argskw)
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, ret)     
 
                 case "com.spotify.superbird.graphql": # Proper handling of this should be implemented at some point.
                     print("Superbird graphql: ", func_argskw)
@@ -246,37 +243,43 @@ def function_handler(msg):
 
 # Subscription handler: Superbird sends a SUBSCRIBE request, we send back a SUBSCRIBED message that
 # contains a subscription ID that is used in EVENT messages to map back to the original request.
-# We store active subscriptions and their IDs in superbird_session.json
+# We store active subscriptions and their IDs in sb_c.superbird_session
 # WAMP has an unsubscribe message but I haven't seen it in use.
+
 last_subscription = 63
 def subscribe_handler(msg, unsub = False):
-    global last_subscription
+    session = sb_c.superbird_session
     try:
-        request_id = msg[1]
-        wamp_options = msg[2]
-        sub_target = msg[3]
-        with_event = False
-        event = []
-
-        f = open('superbird_session.json', 'r+')
-        session = json.load(f)
-        
-        if sub_target not in session["subscriptions"]:
-            try:
-                last_subscription += 1
-                sub_id = last_subscription
-                print("Superbird: subscribing to", sub_target, "with ID:", sub_id)
-                session["subscriptions"][sub_target] = {"sub_id": sub_id, "options": wamp_options}
-                f.seek(0)
-                json.dump(session, f)
-                f.truncate()
-                f.close()
-                resp = wamp_b.build_wamp_subbed(request_id, sub_id)
-                return True, resp, with_event, event
-            except Exception:
-                print(traceback.format_exc())
+        if not unsub:
+            request_id = msg[1]
+            wamp_options = msg[2]
+            sub_target = msg[3]
+            with_event = False
+            event = []
+            global last_subscription
+            if sub_target not in session["subscriptions"]:
+                try:
+                    last_subscription += 1
+                    sub_id = last_subscription
+                    print("Superbird: subscribing to", sub_target, "with ID:", sub_id)
+                    session["subscriptions"][sub_target] = {"sub_id": sub_id, "options": wamp_options}
+                    resp = wamp_b.build_wamp_subbed(request_id, sub_id)
+                    return True, resp, with_event, event
+                except Exception:
+                    print(traceback.format_exc())
+            else:
+                print("Superbird already subscribed to", sub_target, "with ID:", session["subscriptions"][sub_target]["sub_id"])
         else:
-            print("Superbird already subscribed to", sub_target, "with ID:", session["subscriptions"][sub_target]["sub_id"])
+            request_id = msg[1]
+            sub_id = msg[2]
+            with_event = False
+            event = []
+            for i in session["subscriptions"]:
+                if session["subscriptions"][i]['sub_id'] == sub_id:
+                    print("Superbird: unsubscribing from", i)
+                    del session["subscriptions"][i]
+                    resp = wamp_b.build_wamp_unsubbed(request_id)
+                    return True, resp, with_event, event
     except Exception:
         print("\n\n~~~~~ Exception Start ~~~~~")
         traceback.print_exc()

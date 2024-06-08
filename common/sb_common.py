@@ -1,6 +1,8 @@
 from enum import Enum
-
 # Common functions or variables that are used here and there
+
+# Session json: Empty at first, filled by wamp_handler.hello_handler
+superbird_session = {}
 
 # WAMP opCodes
 class opCodes(Enum):

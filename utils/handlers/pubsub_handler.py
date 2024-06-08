@@ -1,11 +1,11 @@
 import time
 import os
-import json
 import traceback
 import utils.wamp.wamp_builder as wamp_b
 import common.sb_common as sb_c
 import utils.handlers.bt_handler as bt_handler
 import common.messages as sb_msgs
+
 # Goes through subscriptions and sends EVENTS as needed
 
 quiet = True
@@ -14,22 +14,32 @@ def print(input):
     if not quiet:
         print_real(input)
 
+def send(data, c_sock):
+    session = sb_c.superbird_session
+    if not session["ota_active"]: # Sending subscriptions during an OTA causes issues
+        while session["sending"] == True: # Keeps sub messages from being sent while something else is sending
+            time.sleep(.1)
+        bt_handler.sendMsg(data, c_sock)
+
 pub_id = 0
 sock = None
 def subHandlerThread(client_sock):
     global sock
     sock = client_sock
     global pub_id
+    session = sb_c.superbird_session
     print("Sub thread spawned!")
-    while not os.path.exists("superbird_session.json"):
+    while "serial" not in session.keys():
+        session = sb_c.superbird_session
+        print("waiting")
+        print(session)
         time.sleep(1)
     print("Sub: Session json found")
     while True:
         try:
             update_status()
-            s_json_file = open("superbird_session.json") 
-            s_json = json.load(s_json_file)
-            for sub_name, sub_info in s_json['subscriptions'].items():
+            session = sb_c.superbird_session
+            for sub_name, sub_info in session['subscriptions'].items():
                 sendSubMsg(client_sock, sub_name, sub_info)
                 #print(sub_name)
                 #print(sub_info)
@@ -43,22 +53,21 @@ def subHandlerThread(client_sock):
 def update_status():
     global pub_id
     global sock
-    s_json_file = open("superbird_session.json") 
-    s_json = json.load(s_json_file)
+    session = sb_c.superbird_session
     
-    for sub_name, sub_info in s_json['subscriptions'].items():
+    for sub_name, sub_info in session['subscriptions'].items():
         match sub_name:
             case "com.spotify.superbird.player_state": # Different fw versions sub to different state events?
                 print("Sub: Send player state")
                 pub_id += 1
                 info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, sb_msgs.player_state_msg)
-                bt_handler.sendMsg(info, sock)
+                send(info, sock)
             
             case "com.spotify.player_state": # Different fw versions sub to different state events?
                 print("Sub: Send player state")
                 pub_id += 1
                 info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, sb_msgs.player_state_msg)
-                bt_handler.sendMsg(info, sock)
+                send(info, sock)
     
 # These were only seen once in packet captures
 sessionOnce = False
@@ -66,15 +75,14 @@ statusOnce = False
 
 def sendSubMsg(client_sock, sub_name, sub_info):
     global pub_id, sessionOnce, statusOnce
-    s_json_file = open("superbird_session.json") 
-    s_json = json.load(s_json_file)
+    session = sb_c.superbird_session
     match sub_name:
         case "com.spotify.session_state":
             if not sessionOnce:
                 print("Sub: Send session info")
                 pub_id += 1
                 info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, {'is_offline': False, 'is_in_forced_offline_mode': False, 'is_logged_in': True, 'connection_type': 'wlan'})
-                bt_handler.sendMsg(info, client_sock)
+                send(info, client_sock)
                 sessionOnce = True
         
         case "com.spotify.status":
@@ -82,7 +90,7 @@ def sendSubMsg(client_sock, sub_name, sub_info):
                 print("Sub: Send status")
                 pub_id += 1
                 info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, {'code': 0, 'short_text': '', 'long_text': ''})
-                bt_handler.sendMsg(info, client_sock)
+                send(info, client_sock)
                 statusOnce = True
 
         # When car mode is not an empty string, Superbird will show "Phone volume unavailable with <mode>"
@@ -91,21 +99,35 @@ def sendSubMsg(client_sock, sub_name, sub_info):
         case "com.spotify.superbird.car_mode":
             print("Sub: Send car mode")
             pub_id += 1
-            if s_json['vol_supported'] == False:
+            if session['vol_supported'] == False:
                 info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, {'mode': 'current device.'})
             else:
                 info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, {'mode': ''})
-            bt_handler.sendMsg(info, client_sock)
+            send(info, client_sock)
         
         case "com.spotify.superbird.volume.volume_state":
             print("Sub: Send volume")
             pub_id += 1
-            info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, {'volume': int(s_json['vol'])/100, 'volume_steps': 25})
-            bt_handler.sendMsg(info, client_sock)
+            info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, {'volume': int(session['vol'])/100, 'volume_steps': 25})
+            send(info, client_sock)
         
         case "com.spotify.play_queue":
             print("Sub: Send queue")
             pub_id += 1
             info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, sb_msgs.play_queue)
-            bt_handler.sendMsg(info, client_sock)
-    
+            send(info, client_sock)
+        
+        case "com.spotify.superbird.ota.package_state":
+            if session["ota_ready"]:
+                print("Sub: Send OTA state")
+                pub_id += 1
+                ota_json = {
+                            'state':'download_success',
+                            'name':'superbird-os',
+                            'version':'NEW_VER', # Whatever the latest fw is
+                            'hash':'MD5_OF_SWU',
+                            'size':0
+                            }
+                ota_state = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, ota_json)
+                send(ota_state, client_sock)
+                session['ota_active'] = True
