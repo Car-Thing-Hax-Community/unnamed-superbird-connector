@@ -26,21 +26,6 @@ Pillow - https://pypi.org/project/pillow/ \
 Simply try running `python3 superbird-server.py` then pair your Superbird. \
 Once it connects, you can go through all the menus as if Superbird was connected to your phone.
 
-# Troubleshooting
-If you get any of these errors:
-```
-bluetooth.btcommon.BluetoothError: no advertisable device
-bluetooth.btcommon.BluetoothError: [Errno 111] Connection refused
-```
-they should be resolvable by editing `/etc/systemd/system/dbus-org.bluez.service` and replacing this line:
-```
-ExecStart=/usr/libexec/bluetooth/bluetoothd --compat --noplugin=sap
-```
-then running `sudo systemctl daemon-reload && sudo systemctl restart bluetooth.service && sudo hciconfig hci0 piscan`.
-
-If you start getting `bluetooth.btcommon.BluetoothError: [Errno 13] Permission denied` errors, \
-run `sudo chgrp bluetooth /var/run/sdp` and make sure you're part of the `bluetooth` group.
-
 # Credits
 https://github.com/Merlin04/superbird-webapp - Lots of communication is handled by the webapp. The reconstructed code makes it easy to figure out how to handle messages 
 https://github.com/relative/deskthing - Early base for this code
