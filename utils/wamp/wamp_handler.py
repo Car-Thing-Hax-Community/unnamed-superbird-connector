@@ -8,7 +8,9 @@ import common.messages as sb_msgs
 import utils.handlers.graphql_handler as gql
 import common.images as sb_img
 import utils.handlers.update_handler as updater
-
+import utils.sp_api as sp_api
+import utils.handlers.pubsub_handler as pubsub_handler
+import time
 # AUTHENTICATE handler: AUTHENTICATE is the response to our "CHALLENGE" message. 
 # We tell Superbird that it passed the challenge/response by sending a "WELCOME" message
 def authenticate_handler():
@@ -62,29 +64,29 @@ def function_handler(msg):
         try:
             match called_func:
                 case "com.spotify.superbird.pitstop.log": # Pitstop log - some logs are very long
-                    if len(str(func_argskw)) > 128:
-                        print("Superbird pitstop log: *longer than 128* Length:", len(str(func_argskw)))
+                    if len(str(func_argskw)) > 4096:
+                        print("Superbird pitstop log: *longer than 4096* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird pitstop log:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                     
                 case "com.spotify.superbird.instrumentation.log": # Instrumentation log - some logs are very long
-                    if len(str(func_argskw)) > 128:
-                        print("Superbird instrumentation log: *longer than 128* Length:", len(str(func_argskw)))
+                    if len(str(func_argskw)) > 4096:
+                        print("Superbird instrumentation log: *longer than 4096* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird instrumentation log:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.instrumentation.request":
-                    if len(str(func_argskw)) > 128:
-                        print("Superbird instrumentation request: *longer than 128* Length:", len(str(func_argskw)))
+                    if len(str(func_argskw)) > 4096:
+                        print("Superbird instrumentation request: *longer than 4096* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird instrumentation request:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.crashes.report":
-                    if len(str(func_argskw)) > 128:
-                        print("Superbird crash report: *longer than 128* Length:", len(str(func_argskw)))
+                    if len(str(func_argskw)) > 4096:
+                        print("Superbird crash report: *longer than 4096* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird crash report:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
@@ -157,7 +159,6 @@ def function_handler(msg):
 
                 case "com.spotify.get_thumbnail_image":
                     print("Superbird: Get thumbnail:", func_argskw)
-                    img_id = str(func_argskw['id'])
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, sb_img.download_img(func_argskw['id'], True))
                 
                 case "com.spotify.set_saved":
@@ -173,27 +174,40 @@ def function_handler(msg):
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.get_children_of_item":
-                    print("Superbird: Get children of item")
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, sb_msgs.get_children_resp)
+                    print("Superbird: Get children of item", func_argskw)
+                    if "CONNECTOR:collection:DEVICE_SEL" in func_argskw['parent_id']:
+                        ret = sp_api.get_devices()
+                    else:
+                        ret = sb_msgs.get_children_resp
+                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, ret)
                 
                 case "com.spotify.superbird.play_uri":
-                    context = ""
-                    if "skip_to_uri" in func_argskw:
-                        context = " in context " + str(func_argskw["uri"])
-                        uri = func_argskw["skip_to_uri"]
+                    if "CONNECTOR" in str(func_argskw["uri"]):
+                        print("Superbird: Play URI: Detected Connector Msg")
+                        print(func_argskw["uri"])
+                        if "DEVICE_SEL" in str(func_argskw["uri"]):
+                            try:
+                                dev_id = str(func_argskw["skip_to_uri"]).split("DEVID:",1)[1]
+                                sp_api.select_device(dev_id)
+                            except:
+                                pass
                     else:
-                        uri = str(func_argskw["uri"])
-                    print("Superbird: Play uri " + uri + context)
+                        context = ""
+                        if "skip_to_uri" in func_argskw:
+                            context = " in context " + str(func_argskw["uri"])
+                            uri = func_argskw["skip_to_uri"]
+                        else:
+                            uri = str(func_argskw["uri"])
+                        print("Superbird: Play uri " + uri + context)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.set_shuffle":
                     print("Superbird: Set shuffle to", func_argskw['shuffle'])
+                    sp_api.action("shuffle", func_argskw['shuffle'])
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.volume.volume_up":
-                    # sub_id = session["subscriptions"]["com.spotify.superbird.volume.volume_state"]["sub_id"]
                     print("Superbird: Volume Up")
-                    # event = wamp_b.build_wamp_event(sub_id, pub_id, {'volume': .5, 'volume_steps': 25})
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.volume.volume_down":
@@ -202,22 +216,30 @@ def function_handler(msg):
 
                 case "com.spotify.superbird.pause":
                     print("Superbird: Pause media")
-                    #sp_api.sp.pause_playback()
+                    sp_api.action("pause")
+                    time.sleep(.5)
+                    pubsub_handler.update_status()
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.resume":
                     print("Superbird: Resume media")
-                    # sp_api.sp.start_playback()
+                    sp_api.action("play")
+                    time.sleep(.5)
+                    pubsub_handler.update_status()
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.skip_prev":
                     print("Superbird: Previous Track")
-                    # sp_api.sp.previous_track()
+                    sp_api.action("prev")
+                    time.sleep(.5)
+                    pubsub_handler.update_status()
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.skip_next":
                     print("Superbird: Next track")
-                    # sp_api.sp.next_track()
+                    sp_api.action("next")
+                    time.sleep(.5)
+                    pubsub_handler.update_status()
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                     
                 case "com.spotify.queue_spotify_uri":
@@ -232,7 +254,6 @@ def function_handler(msg):
             print("\n\n~~~~~ Exception Start ~~~~~")
             traceback.print_exc()
             print("~~~~~  Exception End  ~~~~~\n")
-
 
         return True, resp, with_event, event
     

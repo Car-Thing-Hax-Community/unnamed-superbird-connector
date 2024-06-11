@@ -1,4 +1,5 @@
-# A place for long messages that don't change often
+# A place for message generators and long messages that don't change often 
+import random
 
 # Configuration json that Superbird requests upon connection
 remote_config_response = {
@@ -49,106 +50,109 @@ remote_config_response = {
         }
 }
 
-
-graphql_homescreen = {
-   'data':{
-      'shelf':{
-         'items':[
-            {
-               'title':'Home',
-               'id':'featured',
-               'total':1,
-               'children':[
+# JSON sent when homescreen is requested
+def get_graphql_homescreen():
+   rand = str(random.random())
+   out = {
+      'data':{
+         'shelf':{
+            'items':[
                {
-               'uri':'spotify:user:fake:collection',
-               'title':'CarThingHax',
-               'subtitle':'Home card',
-               'image_id':"carthinghax_logo"
-            }
-               ]
-            },
-            {
-               'title':'Voice', # Used for voice results
-               'id':'voice',
-               'total':1,
-               'children':[
+                  'title':'Home',
+                  'id':'featured',
+                  'total':1,
+                  'children':[
                   {
-                     'uri':'spotify:user:fake:collection',
-                     'title':'CarThingHax',
-                     'subtitle':'Voice result card',
-                     'image_id':'carthinghax_logo'
-                  }
-               ]
-            },
-            {
-               'title':'Playlists',
-               'id':'playlists',
-               'total':1,
-               'children':[
-                  {
-                     'uri':'spotify:user:fake:collection',
-                     'title':'CarThingHax',
-                     'subtitle':'Playlist Card', 
-                     'image_id':'carthinghax_logo'
-                  }
-               ]
-            },
-            {
-               'title':'Podcasts',
-               'id':'podcasts',
-               'total':1,
-               'children':[
-                  {
-                     'uri':'spotify:playlist:fake',
-                     'title':'CarThingHax',
-                     'subtitle':'Podcast Card',
-                     'image_id':'carthinghax_logo'
-                  }
-               ]
-            },
-            {
-               'title':'Artists',
-               'id':'artists',
-               'total':1,
-               'children':[
-                  {
-                     'uri':'spotify:artist:fake',
-                     'title':'CarThingHax',
-                     'subtitle':'Artist Card',
-                     'image_id':'carthinghax_logo'
-                  }
-               ]
-            },
-            {
-               'title':'Albums',
-               'id':'albums',
-               'total':1,
-               'children':[
-                  {
-                     'uri':'spotify:album:fake',
-                     'title':'CarThingHax',
-                     'subtitle':'Album Card',
-                     'image_id':'carthinghax_logo'
-                  }
-               ]
-            },
-            {
-               'title':'Devices',
-               'id':'devices',
-               'total':1,
-               'children':[
-                  {
-                     'uri':'spotify:album:fake',
-                     'title':'Devices',
-                     'subtitle':'Spotify Connect',
-                     'image_id':'carthinghax_logo'
-                  }
-               ]
-            }
-         ]
+                  'uri':'spotify:user:fake:collection',
+                  'title':'CarThingHax',
+                  'subtitle':'Home card',
+                  'image_id':"carthinghax_logo"
+               }
+                  ]
+               },
+               {
+                  'title':'Voice', # Used for voice results
+                  'id':'voice',
+                  'total':1,
+                  'children':[
+                     {
+                        'uri':'spotify:user:fake:collection',
+                        'title':'CarThingHax',
+                        'subtitle':'Voice result card',
+                        'image_id':'carthinghax_logo'
+                     }
+                  ]
+               },
+               {
+                  'title':'Playlists',
+                  'id':'playlists',
+                  'total':1,
+                  'children':[
+                     {
+                        'uri':'spotify:user:fake:collection',
+                        'title':'CarThingHax',
+                        'subtitle':'Playlist Card', 
+                        'image_id':'carthinghax_logo'
+                     }
+                  ]
+               },
+               {
+                  'title':'Podcasts',
+                  'id':'podcasts',
+                  'total':1,
+                  'children':[
+                     {
+                        'uri':'spotify:playlist:fake',
+                        'title':'CarThingHax',
+                        'subtitle':'Podcast Card',
+                        'image_id':'carthinghax_logo'
+                     }
+                  ]
+               },
+               {
+                  'title':'Artists',
+                  'id':'artists',
+                  'total':1,
+                  'children':[
+                     {
+                        'uri':'spotify:artist:fake',
+                        'title':'CarThingHax',
+                        'subtitle':'Artist Card',
+                        'image_id':'carthinghax_logo'
+                     }
+                  ]
+               },
+               {
+                  'title':'Albums',
+                  'id':'albums',
+                  'total':1,
+                  'children':[
+                     {
+                        'uri':'spotify:album:fake',
+                        'title':'CarThingHax',
+                        'subtitle':'Album Card',
+                        'image_id':'carthinghax_logo'
+                     }
+                  ]
+               },
+               {
+                  'title':'Devices',
+                  'id':'devices',
+                  'total':1,
+                  'children':[
+                     {
+                        'uri':'spotify:user:CONNECTOR:collection:DEVICE_SEL:::' + rand, # Trick Superbird into refreshing the menu every time home is refreshed and hiding the save button
+                        'title':'Devices',
+                        'subtitle':'Spotify Connect',
+                        'image_id':'carthinghax_logo'
+                     }
+                  ]
+               }
+            ]
+         }
       }
    }
-}
+   return out
 
 # Superbird has 2 different ways of getting the home screen, with graphql
 # or com.spotify.superbird.get_home. The get_home function is almost never used
@@ -177,7 +181,7 @@ old_homescreen = {
    ]
 }
 
-play_queue = {
+example_play_queue = {
    'next':[
        {
          'uid':'null',
@@ -185,6 +189,23 @@ play_queue = {
          'name':'song 2 title',
          'artists':[
             
+         ],
+         'image_uri':'spotify:image:carthinghax_logo',
+         'provider':'context'
+      },
+      {
+         'uid':'null',
+         'uri':'spotify:track:caaaaaaaaaaaaaaaaaaaaa',
+         'name':'song 3 title',
+         'artists':[
+            {
+                "name":"test",
+                "uri":"spotify:artist:aaaaaaaaaaaaaaaaaaaaaa"
+            },
+            {
+                "name":"test 2",
+                "uri":"spotify:artist:aaaaaaaaaaaaaaaaaaaaaa"
+            }
          ],
          'image_uri':'spotify:image:carthinghax_logo',
          'provider':'context'
@@ -197,7 +218,7 @@ play_queue = {
       'artists':[
          
       ],
-      'image_uri':'spotify:image:carthinghax_logo',
+      'image_uri':'carthinghax_logo',
       'provider':'context'
    },
    'previous':[
@@ -206,7 +227,7 @@ play_queue = {
 }
 
 # Player that shows up when normally playing music from Spotify
-player_state_msg ={
+example_player_state_msg = {
    "context_uri":"spotify:user:aaaaaaaaaaaaaaaaaaaaaa:collection",
    "is_paused":False,
    "is_paused_bool":False,
@@ -244,7 +265,7 @@ player_state_msg ={
             }
         ],
       "duration_ms":6000,
-      "image_id":"spotify:image:carthinghax_logo", # Figuring this out still, used in get_image calls
+      "image_id":"carthinghax_logo", # Rarely used, keep the same as play_queue just in case
       "is_episode":False,
       "is_podcast":False,
       "name": "Superbird connector",
@@ -255,7 +276,7 @@ player_state_msg ={
 }
 
 # Simple player that would show up when playing music from another app
-player_state_simple = {
+example_player_state_simple = {
     "currently_active_application":{
         "id":"com.example",
         "name":"Example app"
@@ -298,8 +319,8 @@ player_state_simple = {
             }
         ],
         "duration_ms":5000,
-        "image_id":"spotify:image:none",
-        "image_bytes": "image_bytes", # The current album art sent as a bytearray. Format should be png
+        "image_id":"carthinghax_logo",
+        #"image_bytes": "image_bytes", # The current album art sent as a bytearray. Format should be png. If excluded, get_image is used instead
         "is_episode":False,
         "is_podcast":False,
         "name": "Superbird connector",
@@ -374,8 +395,8 @@ get_children_resp = {
    'total':1,
    'items':[
       {
-         'id':'spotify:track:aaaaaaaaaaaaaaaaaaaaaa', # Needs to be valid Spotify URI
-         'uri':'spotify:track:aaaaaaaaaaaaaaaaaaaaaa', # Needs to be valid Spotify URI
+         'id':'spotify:track:aaaaaaaaaaaaaaaaaaaaaa', # Needs to be valid Spotify URI (format is spotify:<song or something else>:<22 characters>)
+         'uri':'spotify:track:aaaaaaaaaaaaaaaaaaaaaa', # Needs to be valid Spotify URI (format is spotify:<song or something else>:<22 characters>)
          'image_id':'carthinghax_logo',
          'title':'CarThingHax',
          'subtitle':'Child of item',

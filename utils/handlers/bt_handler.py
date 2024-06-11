@@ -5,6 +5,10 @@ import time
 import common.sb_common as sb_c
 # Bluetooth logic for sending, receiving, serializing, etc.
 
+# I keep running into issues with pubsub_handler and the main server talking over 
+# so I'll have them add messages to an outbox instead
+outbox = []
+
 # Messages to/from Superbird have a 4 byte length header, then the rest of the message is MessagePack
 # We read the first 4 bytes, convert that to an int then read again with the int as the size
 def get_msg(sock):
@@ -23,7 +27,7 @@ def get_msg_with_len(sock, n):
         data.extend(packet)
     return data
 
-# Sometimes messages are too big so we chop em up
+# Sometimes messages are too big so we chop em up and send across multiple chunks
 def send_chunks(data, sock, chunk_size):
   for i in range(0, len(data), chunk_size):
     chunk = data[i:i+chunk_size]
@@ -31,13 +35,19 @@ def send_chunks(data, sock, chunk_size):
     time.sleep(.01)
 
 # Pack messages into MessagePack format and send them to Superbird
-def sendMsg(data_in, client_sock):
-    sb_c.superbird_session["sending"] = True
-    data = umsgpack.packb(data_in)
+def sendFromOutbox(client_sock):
+    data = umsgpack.packb(outbox.pop())
     data_len = struct.pack('>I', len(data))
     data = data_len + data
     if len(data) >= 990:
         send_chunks(data, client_sock, 990)
     else:
         client_sock.send(data)
-    sb_c.superbird_session["sending"] = False
+
+# Add messages to the outbox
+def addToOutbox(data_in): outbox.insert(0, data_in)
+
+def outboxThread(sock):
+    while True:
+        if outbox:
+            sendFromOutbox(sock)

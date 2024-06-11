@@ -6,7 +6,7 @@ import traceback
 import common.sb_common as sb_c
 import utils.handlers.bt_handler as bt_handler
 import utils.wamp.wamp_handler as wamp_h
-import utils.handlers.pubsub_handler
+import utils.handlers.pubsub_handler as pubsub_handler
 import utils.bt_utils as bt_utils
 
 # Un-MessagePack messages and send them to their respective handlers
@@ -30,9 +30,11 @@ def processMsg(data: bytearray):
             case _:
                 print("Unhandled opcode:", msg_opcode, " Msg:", msg)
         if send:
-            bt_handler.sendMsg(resp, client_sock)
-        if with_event: # Sometimes we also need to send an event
-            bt_handler.sendMsg(event, client_sock)
+            bt_handler.addToOutbox(resp)
+        if with_event:
+            pubsub_handler.update_status()
+        # if with_event: # Sometimes we also need to send an event # Might not be needed
+        #     bt_handler.addToOutbox(event)
     except Exception:
         print("\n\n~~~~~ Exception Start ~~~~~")
         traceback.print_exc()
@@ -48,8 +50,12 @@ print("Waiting for connection on RFCOMM channel", bt_utils.port)
 client_sock, client_info = server_sock.accept()
 print("Connected")
 
+# Start outbox thread
+sub_handler_thread = threading.Thread(target=bt_handler.outboxThread, args=(client_sock,), daemon=True)
+sub_handler_thread.start()
+
 # Start subscription handler thread
-sub_handler_thread = threading.Thread(target=utils.handlers.pubsub_handler.subHandlerThread, args=(client_sock,), daemon=True)
+sub_handler_thread = threading.Thread(target=pubsub_handler.subHandlerThread, daemon=True)
 sub_handler_thread.start()
 
 try:
