@@ -193,7 +193,6 @@ def get_devices():
     out['limit'] = device_count
     out['total'] = device_count
     out['items'] = devices
-    print(out)
     return out
     
 def select_device(dev):

@@ -64,29 +64,29 @@ def function_handler(msg):
         try:
             match called_func:
                 case "com.spotify.superbird.pitstop.log": # Pitstop log - some logs are very long
-                    if len(str(func_argskw)) > 4096:
-                        print("Superbird pitstop log: *longer than 4096* Length:", len(str(func_argskw)))
+                    if len(str(func_argskw)) > 1024:
+                        print("Superbird pitstop log: *longer than 1024* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird pitstop log:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                     
                 case "com.spotify.superbird.instrumentation.log": # Instrumentation log - some logs are very long
-                    if len(str(func_argskw)) > 4096:
-                        print("Superbird instrumentation log: *longer than 4096* Length:", len(str(func_argskw)))
+                    if len(str(func_argskw)) > 1024:
+                        print("Superbird instrumentation log: *longer than 1024* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird instrumentation log:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.instrumentation.request":
-                    if len(str(func_argskw)) > 4096:
-                        print("Superbird instrumentation request: *longer than 4096* Length:", len(str(func_argskw)))
+                    if len(str(func_argskw)) > 1024:
+                        print("Superbird instrumentation request: *longer than 1024* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird instrumentation request:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.crashes.report":
-                    if len(str(func_argskw)) > 4096:
-                        print("Superbird crash report: *longer than 4096* Length:", len(str(func_argskw)))
+                    if len(str(func_argskw)) > 1024:
+                        print("Superbird crash report: *longer than 1024* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird crash report:", func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
