@@ -32,7 +32,10 @@ def get_queue():
             'uri':'spotify:track:aaaaaaaaaaaaaaaaaaaaab',
             'name':'Select a device to start playback',
             'artists':[
-                
+                {
+                "name":"Or just start playing music",
+                "uri":"spotify:artist:aaaaaaaaaaaaaaaaaaaaaa"
+            },
             ],
             'image_uri':'carthinghax_logo',
             'provider':'context'
@@ -102,7 +105,10 @@ def get_player_state():
         "playback_speed":1, # Playback speed multiplier (for progress bar). 1 = realtime
         "track":{
             "album":{},
-                "artist":{},
+                "artist":{
+                    "name":"Or just start playing music",
+                    "uri":"spotify:artist:fake"
+                },
                 "artists":[],
             "duration_ms":0,
             "image_id":"carthinghax_logo", # Rarely used, keep the same as play_queue just in case
