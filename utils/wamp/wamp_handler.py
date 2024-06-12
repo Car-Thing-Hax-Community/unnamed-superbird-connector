@@ -61,6 +61,9 @@ def function_handler(msg):
         called_func = msg[3]
         func_args = msg[4]
         func_argskw = msg[5]
+        sendResp = True
+        # Generic response, basically an ACK
+        resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
         try:
             match called_func:
                 case "com.spotify.superbird.pitstop.log": # Pitstop log - some logs are very long
@@ -68,28 +71,24 @@ def function_handler(msg):
                         print("Superbird pitstop log: *longer than 1024* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird pitstop log:", func_argskw)
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                     
                 case "com.spotify.superbird.instrumentation.log": # Instrumentation log - some logs are very long
                     if len(str(func_argskw)) > 1024:
                         print("Superbird instrumentation log: *longer than 1024* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird instrumentation log:", func_argskw)
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.instrumentation.request":
                     if len(str(func_argskw)) > 1024:
                         print("Superbird instrumentation request: *longer than 1024* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird instrumentation request:", func_argskw)
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.crashes.report":
                     if len(str(func_argskw)) > 1024:
                         print("Superbird crash report: *longer than 1024* Length:", len(str(func_argskw)))
                     else:
                         print("Superbird crash report:", func_argskw)
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.ota.check_for_updates": # Update check
                     print("Superbird: Checked for updates")
@@ -116,7 +115,6 @@ def function_handler(msg):
                 
                 case "com.spotify.superbird.register_device":
                     print("Superbird: Registering")
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.tts.speak":
                     print("Superbird: Requesting TTS:", func_argskw)
@@ -124,24 +122,26 @@ def function_handler(msg):
                 
                 case "com.spotify.superbird.voice.start_session":
                     print("Superbird: Start voice session")
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.voice.data":
                     print("Superbird: Sending voice data, writing to audio.ogg")
                     open("audio.ogg", "ab").write(func_argskw['voice_data'])
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
+                    sendResp = False
+                    resp = {}
 
                 case "com.spotify.superbird.voice.cancel_session":
                     print("Superbird: Stop voice session")
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
+                case "com.spotify.superbird.wakeword.upload":
+                    print("Superbird: Upload wakeword")
+                    open("wakeword_" + func_argskw['filename'], "wb").write(func_argskw['wakeword'])
+
                 case "com.spotify.superbird.remote_configuration":
                     print("Superbird: Request config")
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, sb_msgs.remote_config_response)
                 
                 case "com.spotify.superbird.set_active_app":
                     print("Superbird: Change active app:", func_argskw)
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.tipsandtricks.get_tips_and_tricks":
                     print("Superbird: Get tips n' tricks")
@@ -163,7 +163,6 @@ def function_handler(msg):
                 
                 case "com.spotify.set_saved":
                     print("Superbird: Set saved for", func_argskw['uri'], "to", func_argskw["saved"])
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.get_saved":
                     print("Superbird: Check if saved")
@@ -171,7 +170,6 @@ def function_handler(msg):
 
                 case "com.spotify.superbird.presets.get_presets": # Only gets called after a factory reset. After reboot, it's handled by graphql 
                     print("Superbird: Get presets")
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.get_children_of_item":
                     print("Superbird: Get children of item", func_argskw)
@@ -200,64 +198,54 @@ def function_handler(msg):
                             uri = str(func_argskw["uri"])
                         print("Superbird: Play uri " + uri + context)
                     with_event = True
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.set_shuffle":
                     print("Superbird: Set shuffle to", func_argskw['shuffle'])
                     sp_api.action("shuffle", func_argskw['shuffle'])
                     with_event = True
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.volume.volume_up":
                     print("Superbird: Volume Up")
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.volume.volume_down":
                     print("Superbird: Volume Down")
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.pause":
                     print("Superbird: Pause media")
                     sp_api.action("pause")
                     time.sleep(.5)
                     with_event = True
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.resume":
                     print("Superbird: Resume media")
                     sp_api.action("play")
                     time.sleep(.5)
                     with_event = True
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.skip_prev":
                     print("Superbird: Previous Track")
                     sp_api.action("prev")
                     time.sleep(.5)
                     with_event = True
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.skip_next":
                     print("Superbird: Next track")
                     sp_api.action("next")
                     time.sleep(.5)
                     with_event = True
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                     
                 case "com.spotify.queue_spotify_uri":
                     print("Superbird: Add to queue. URI:", func_argskw['uri'])
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case _: # Calls that don't have a handler just get an empty response and get printed to console
                     print("\n\nSuperbird: Unhandled call:", called_func, "\nRequest ID:", request_id, "\nWAMP Options:", wamp_options, "\nArguments:", func_args, "\nnArgumentsKw:", func_argskw, '\n')
-                    resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
         except Exception:
             print("\n\n~~~~~ Exception Start ~~~~~")
             traceback.print_exc()
             print("~~~~~  Exception End  ~~~~~\n")
 
-        return True, resp, with_event, event
+        return sendResp, resp, with_event, event
     
     except Exception:
        print("\n\n~~~~~ Exception Start ~~~~~")
