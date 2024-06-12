@@ -199,11 +199,13 @@ def function_handler(msg):
                         else:
                             uri = str(func_argskw["uri"])
                         print("Superbird: Play uri " + uri + context)
+                    with_event = True
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.set_shuffle":
                     print("Superbird: Set shuffle to", func_argskw['shuffle'])
                     sp_api.action("shuffle", func_argskw['shuffle'])
+                    with_event = True
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.volume.volume_up":
@@ -218,28 +220,28 @@ def function_handler(msg):
                     print("Superbird: Pause media")
                     sp_api.action("pause")
                     time.sleep(.5)
-                    pubsub_handler.update_status()
+                    with_event = True
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.resume":
                     print("Superbird: Resume media")
                     sp_api.action("play")
                     time.sleep(.5)
-                    pubsub_handler.update_status()
+                    with_event = True
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
 
                 case "com.spotify.superbird.skip_prev":
                     print("Superbird: Previous Track")
                     sp_api.action("prev")
                     time.sleep(.5)
-                    pubsub_handler.update_status()
+                    with_event = True
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                 
                 case "com.spotify.superbird.skip_next":
                     print("Superbird: Next track")
                     sp_api.action("next")
                     time.sleep(.5)
-                    pubsub_handler.update_status()
+                    with_event = True
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, {})
                     
                 case "com.spotify.queue_spotify_uri":

@@ -27,12 +27,21 @@ def action(act, arg = None):
 def get_queue():
     out = {
         'next':[],
-        'current':{},
+        'current':{
+            'uid':'null',
+            'uri':'spotify:track:aaaaaaaaaaaaaaaaaaaaab',
+            'name':'Select a device to start playback',
+            'artists':[
+                
+            ],
+            'image_uri':'carthinghax_logo',
+            'provider':'context'
+        },
         'previous':[] # Not returned by API, will need to manually implement
     }
     try:
         if sp.queue()['currently_playing'] == None:
-            return {}
+            return out
         api_current = sp.queue()['currently_playing']
         api_queue = sp.queue()['queue']
         current_artists = []
@@ -96,10 +105,10 @@ def get_player_state():
                 "artist":{},
                 "artists":[],
             "duration_ms":0,
-            "image_id":"", # Rarely used, keep the same as play_queue just in case
+            "image_id":"carthinghax_logo", # Rarely used, keep the same as play_queue just in case
             "is_episode":False,
             "is_podcast":False,
-            "name": "",
+            "name": "Select a device to start playback",
             "saved": False,
             'uid':'null',
             "uri":"none"
@@ -199,4 +208,5 @@ def select_device(dev):
     sp.transfer_playback(dev)
 
 def canUseVolume():
-    return sp.current_playback()['device']['supports_volume']
+    try: return sp.current_playback()['device']['supports_volume']
+    except: return False

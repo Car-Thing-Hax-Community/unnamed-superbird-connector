@@ -13,7 +13,7 @@ def print(input):
         print_real(input)
 
 pub_id = 0
-def subHandlerThread():
+def subHandlerThread(threadStop):
     global pub_id
     session = sb_c.superbird_session
     print("Sub thread spawned!")
@@ -22,7 +22,7 @@ def subHandlerThread():
         print("waiting")
         time.sleep(1)
     print("Sub: Session json found")
-    while True:
+    while not threadStop.is_set():
         try:
             update_status()
             session = sb_c.superbird_session
@@ -35,6 +35,7 @@ def subHandlerThread():
             print_real("\n\n~~~~~ Exception Start ~~~~~")
             print_real(traceback.format_exc())
             print_real("~~~~~  Exception End  ~~~~~\n")
+    print_real("PubSub thread stopped")
 
 
 def update_status():

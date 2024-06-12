@@ -47,7 +47,8 @@ def sendFromOutbox(client_sock):
 # Add messages to the outbox
 def addToOutbox(data_in): outbox.insert(0, data_in)
 
-def outboxThread(sock):
-    while True:
+def outboxThread(sock, threadStop):
+    while not threadStop.is_set():
         if outbox:
             sendFromOutbox(sock)
+    print("Outbox thread stopped")

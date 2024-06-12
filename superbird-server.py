@@ -41,39 +41,53 @@ def processMsg(data: bytearray):
         print("~~~~~  Exception End  ~~~~~\n")
         pass
 
+connected = False
+registered = False
+stopThreads = threading.Event()
+while True:
+    if not connected:
+        # We advertise the RFCOMM service that Superbird is expecting and accept any connections to it
+        server_sock = bt_utils.open_socket()
+        time.sleep(1)
+        while not registered: # We just need to register the service once
+            bt_utils.register_sdp()
+            print("Waiting for connection on RFCOMM channel", bt_utils.port)
+            registered = True
+        client_sock, client_info = server_sock.accept()
+        print("Connected")
+        outbox_thread = threading.Thread(target=bt_handler.outboxThread, args=(client_sock, stopThreads,), daemon=True)
+        sub_handler_thread = threading.Thread(target=pubsub_handler.subHandlerThread, args=(stopThreads,), daemon=True)
+        # Start outbox thread
+        outbox_thread.start()
+        # Start subscription handler thread
+        sub_handler_thread.start()
+        connected = True
 
-# We advertise the RFCOMM service that Superbird is expecting and accept any connections to it
-server_sock = bt_utils.open_socket()
-time.sleep(1)
-bt_utils.register_sdp()
-print("Waiting for connection on RFCOMM channel", bt_utils.port)
-client_sock, client_info = server_sock.accept()
-print("Connected")
-
-# Start outbox thread
-sub_handler_thread = threading.Thread(target=bt_handler.outboxThread, args=(client_sock,), daemon=True)
-sub_handler_thread.start()
-
-# Start subscription handler thread
-sub_handler_thread = threading.Thread(target=pubsub_handler.subHandlerThread, daemon=True)
-sub_handler_thread.start()
-
-try:
-    while True:
-        data = bt_handler.get_msg(client_sock)
-        processMsg(data)
-        if not data:
-            break
-except OSError:
-    pass
-except KeyboardInterrupt:
-    pass
-except Exception:
-    print("\n\n~~~~~ Exception Start ~~~~~")
-    traceback.print_exc()
-    print("~~~~~  Exception End  ~~~~~\n")
-    pass
-
-client_sock.close()
-
-print("\n\nDisconnected.")
+    if connected:
+        try:
+            while True:
+                data = bt_handler.get_msg(client_sock)
+                processMsg(data)
+                if not data:
+                    break
+        except KeyboardInterrupt:
+            pass
+        except Exception:
+            print("\n\n~~~~~ Exception Start ~~~~~")
+            traceback.print_exc()
+            print("~~~~~  Exception End  ~~~~~\n")
+            pass
+        client_sock.close()
+        stopThreads.set()
+        time.sleep(2) #allow time for threads to stop
+        server_sock.close()
+        client_sock.close()
+        connected = False
+        sb_c.superbird_session = [] # Clear session info when disconnected
+        print("\n\nDisconnected. Reopening socket in 5s. Press Ctrl + C to stop")
+        try:
+            time.sleep(5)
+            stopThreads.clear()
+        except KeyboardInterrupt:
+            print("Quitting...")
+            raise SystemExit(0)
