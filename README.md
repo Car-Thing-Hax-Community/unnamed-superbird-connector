@@ -19,6 +19,9 @@ There's a very small chance this will exceed rate limits. If you start seeing 42
 Most, if not all messages to/from Superbird are implemented.\
 Currently playback control (except queue and saving tracks) and switching devices is implemented.
 
+Superbird actually processes some commands on device so you can already use "Hey Spotify". These are the available commands:
+`resume, previous, stop, pause, mute, next, skip`
+
 # Prerequisites
 Python 3.10+ - Connector makes heavy use of match case statements which were introduced in 3.10
 
