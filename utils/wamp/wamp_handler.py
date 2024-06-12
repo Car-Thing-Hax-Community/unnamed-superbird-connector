@@ -271,6 +271,7 @@ def function_handler(msg):
 
 last_subscription = 63
 def subscribe_handler(msg, unsub = False):
+    global last_subscription
     session = sb_c.superbird_session
     try:
         if not unsub:
@@ -279,7 +280,6 @@ def subscribe_handler(msg, unsub = False):
             sub_target = msg[3]
             with_event = False
             event = []
-            global last_subscription
             if sub_target not in session["subscriptions"]:
                 try:
                     last_subscription += 1

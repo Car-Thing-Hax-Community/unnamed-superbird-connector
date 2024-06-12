@@ -41,6 +41,11 @@ def processMsg(data: bytearray):
         print("~~~~~  Exception End  ~~~~~\n")
         pass
 
+def resetVars():
+    wamp_h.last_subscription = 63
+    sb_c.superbird_session = {}
+    pubsub_handler.pub_id = 1
+
 connected = False
 registered = False
 stopThreads = threading.Event()
@@ -83,7 +88,7 @@ while True:
         server_sock.close()
         client_sock.close()
         connected = False
-        sb_c.superbird_session = [] # Clear session info when disconnected
+        resetVars()
         print("\n\nDisconnected. Reopening socket in 5s. Press Ctrl + C to stop")
         try:
             time.sleep(5)
