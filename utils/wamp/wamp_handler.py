@@ -8,7 +8,7 @@ import common.messages as sb_msgs
 import utils.handlers.graphql_handler as gql
 import common.images as sb_img
 import utils.handlers.update_handler as updater
-import utils.sp_api as sp_api
+import utils.remote_api as remote_api
 import utils.handlers.pubsub_handler as pubsub_handler
 import time
 # AUTHENTICATE handler: AUTHENTICATE is the response to our "CHALLENGE" message. 
@@ -174,7 +174,7 @@ def function_handler(msg):
                 case "com.spotify.get_children_of_item":
                     print("Superbird: Get children of item", func_argskw)
                     if "CONNECTOR:collection:DEVICE_SEL" in func_argskw['parent_id']:
-                        ret = sp_api.get_devices()
+                        ret = remote_api.get_devices()
                     else:
                         ret = sb_msgs.get_children_resp
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, ret)
@@ -186,7 +186,7 @@ def function_handler(msg):
                         if "DEVICE_SEL" in str(func_argskw["uri"]):
                             try:
                                 dev_id = str(func_argskw["skip_to_uri"]).split("DEVID:",1)[1]
-                                sp_api.select_device(dev_id)
+                                remote_api.select_device(dev_id)
                             except:
                                 pass
                     else:
@@ -201,7 +201,7 @@ def function_handler(msg):
                 
                 case "com.spotify.superbird.set_shuffle":
                     print("Superbird: Set shuffle to", func_argskw['shuffle'])
-                    sp_api.action("shuffle", func_argskw['shuffle'])
+                    remote_api.action("shuffle", func_argskw['shuffle'])
                     with_event = True
 
                 case "com.spotify.superbird.volume.volume_up":
@@ -212,25 +212,25 @@ def function_handler(msg):
 
                 case "com.spotify.superbird.pause":
                     print("Superbird: Pause media")
-                    sp_api.action("pause")
+                    remote_api.action("pause")
                     time.sleep(.5)
                     with_event = True
                 
                 case "com.spotify.superbird.resume":
                     print("Superbird: Resume media")
-                    sp_api.action("play")
+                    remote_api.action("play")
                     time.sleep(.5)
                     with_event = True
 
                 case "com.spotify.superbird.skip_prev":
                     print("Superbird: Previous Track")
-                    sp_api.action("prev")
+                    remote_api.action("prev")
                     time.sleep(.5)
                     with_event = True
                 
                 case "com.spotify.superbird.skip_next":
                     print("Superbird: Next track")
-                    sp_api.action("next")
+                    remote_api.action("next")
                     time.sleep(.5)
                     with_event = True
                     

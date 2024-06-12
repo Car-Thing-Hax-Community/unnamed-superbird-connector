@@ -3,7 +3,7 @@ import traceback
 import utils.wamp.wamp_builder as wamp_b
 import common.sb_common as sb_c
 import utils.handlers.bt_handler as bt_handler
-import utils.sp_api as sp_api
+import utils.remote_api as remote_api
 
 # Goes through subscriptions and sends EVENTS as needed
 quiet = True
@@ -42,8 +42,8 @@ def update_status():
     global pub_id
     session = sb_c.superbird_session
     try:
-        pstate = sp_api.get_player_state()
-        np_queue = sp_api.get_queue()
+        pstate = remote_api.get_player_state()
+        np_queue = remote_api.get_queue()
         if "com.spotify.superbird.player_state" in session['subscriptions']: # Different fw versions sub to different state events?
             print("Sub: Send player state")
             pub_id += 1
@@ -95,7 +95,7 @@ def sendSubMsg(sub_name, sub_info):
         case "com.spotify.superbird.car_mode":
             print("Sub: Send car mode")
             pub_id += 1
-            if sp_api.canUseVolume():
+            if remote_api.canUseVolume():
                 info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, {'mode': ''})
             else:
                 info = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, {'mode': 'current device.'})                

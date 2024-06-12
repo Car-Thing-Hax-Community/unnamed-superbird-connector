@@ -1,4 +1,7 @@
 # unnamed-superbird-connector
+
+**Join the Discord! https://discord.gg/DM2AqyPJAA**
+
 **This is currently in very early development and has a very small set of features.**
 **Currently, most things you see on your Superbird when running this is a placeholder**  
 Tool to connect Superbird to the Spotify Web API \
@@ -44,6 +47,10 @@ Pillow - https://pypi.org/project/pillow/ \
 # Running
 Simply try running `python3 superbird-server.py` then pair your Superbird. \
 Once it connects, you can go through all the menus as if Superbird was connected to your phone.
+
+# Contributing / forking
+If you'd like to add support for another service, feel free to make a fork of this repo! All the code that talks to the Spotify API
+is in remote_api.py so that *should* be the only file you need to edit. If you need any help/guidance, feel free to ask in the Discord!
 
 # Credits
 https://github.com/Merlin04/superbird-webapp - Lots of communication is handled by the webapp. The reconstructed code makes it easy to figure out how to handle messages

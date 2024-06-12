@@ -1,5 +1,5 @@
 import common.messages as sb_msgs
-import utils.sp_api as sp_api
+import utils.remote_api as remote_api
 def graphql_resp(func_argskw):
     if "tipsOnDemand" in str(func_argskw):
         print("Tips requested")
