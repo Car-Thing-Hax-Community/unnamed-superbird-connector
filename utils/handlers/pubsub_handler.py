@@ -68,9 +68,9 @@ def update_status():
 # These were only seen once in packet captures
 sessionOnce = False
 statusOnce = False
-
+updateOnce = False
 def sendSubMsg(sub_name, sub_info):
-    global pub_id, sessionOnce, statusOnce
+    global pub_id, sessionOnce, statusOnce, updateOnce
     session = sb_c.superbird_session
     match sub_name:
         case "com.spotify.session_state":
@@ -108,16 +108,17 @@ def sendSubMsg(sub_name, sub_info):
             bt_handler.addToOutbox(info)
         
         case "com.spotify.superbird.ota.package_state":
-            if session["ota_ready"]:
+            if session["ota_ready"] & (not updateOnce):
                 print("Sub: Send OTA state")
                 pub_id += 1
                 ota_json = {
                             'state':'download_success',
                             'name':'superbird-os',
-                            'version':'NEW_VER', # Whatever the latest fw is
-                            'hash':'MD5_OF_SWU',
+                            'version':'0.0.0', # Whatever the latest fw is
+                            'hash':'MD5_HASH',
                             'size':0
                             }
                 ota_state = wamp_b.build_wamp_event(sub_info['sub_id'], pub_id, ota_json)
                 bt_handler.addToOutbox(ota_state)
+                updateOnce = True
                 session['ota_active'] = True

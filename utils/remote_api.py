@@ -45,6 +45,7 @@ def get_queue():
     try:
         if sp.queue()['currently_playing'] == None:
             return out
+        print(sp.queue())
         api_current = sp.queue()['currently_playing']
         api_queue = sp.queue()['queue']
         current_artists = []
