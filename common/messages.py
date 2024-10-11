@@ -3,12 +3,20 @@ import random
 
 # Configuration json that Superbird requests upon connection
 remote_config_response = {
-   'result': {
+   "result":{
+      # General Settings
+      'ota_inactivity_timeout': 10, # How long to wait before resuming OTA download
+      'non_spotify_playback_android': True, # Allows the simple now playing screen to be used
+      'non_spotify_playback_ios': True, # iOS has a different way of handling the simple now playing screen
+      'handle_incoming_phone_calls': False, # If we figure out phone calls, this can be used to show incoming calls on Superbird
+      'developer_menu_enabled': True, # Shows the Developer Menu in the Settings menu
+      'local_command_stop_enabled': True, # Disables / enables local voice command processing. Refer to README
+      
       # Night mode decreases the screen contrast when the enviroment is dim
       'night_mode_enabled': True, # Doesn't seem to affect anything
       'night_mode_strength': 40, # This adjusts the strength
       'night_mode_slope': 10, # Not sure what exactly this does, it's best to leave it alone
-
+      
       # Sends the recording of you saying Hey Spotify as a .wav file to Connector
       'upload_wakeword': False,
 
@@ -17,44 +25,36 @@ remote_config_response = {
       'log_requests': False,
       'batch_ubi_logs': False,
       
-      # General Settings
-      'ota_inactivity_timeout': 10, # How long to wait before resuming OTA download
-      'non_spotify_playback_android': True, # Allows the simple now playing screen to be used
-      'non_spotify_playback_ios': True,
-      'handle_incoming_phone_calls': False, # If we figure out phone calls, can be used to show incoming calls on Superbird
-      'developer_menu_enabled': True,
-      'local_command_stop_enabled': True, # Disables / enables local voice command processing. Refer to README
+      # Controls the behaviour of the sunset screen. Has no affect before OS 8.9.2
+      # Changing these isn't recommended but if you do it shouldn't harm anything
+      'sunset_kill_switch': False, # Shows "Car Thing is discontinued" message
+      'sunset_info_screen_nag': False, # No affect?
+      'sunset_info_screen': False, # No affect?
 
-      # Effect is unknown, changing these isn't recommended 
-      'tips_startup_delay': 600, # Seems to be hardcoded to 600 in webapp
-      'tips_interaction_delay': 4, # Seems to be hardcoded to 4 in webapp
-      'tips_request_interval': 600, # Seems to be hardcoded to 600 in webapp
-      'tips_show_time': 8, # Seems to be hardcoded to 8 in webapp
-      'tips_track_change_delay': 10, # Seems to be hardcoded to 10 in webapp
-      'queue_enabled': True,
-      'podcast_trailer_enabled': True,
-      'use_relative_volume_control': True,
-      'tracklist_context_menu_enabled': True,
-      'podcast_speed_change_enabled': True,
-      'use_new_voice_ui': True,
-      'volume_control': True,
-      'enable_push_to_talk_shelf': False,
-      'enable_push_to_talk_npv': False, 
-      'long_press_settings_power_off_v2': True,
-      'app_launch_rssi_limit': 0,
-      'auto_restart_after_ota': False,
-      'hide_home_more_button': True,
-      'tips_enabled': True,
-      'get_home_enabled': True,
-      'error_messaging_no_network': True,
-      'tips_on_demand_enabled': True,
-
-      # Doesn't do anything as of 8.4.4 and it's unknown what the behavior will be.
-      # Don't change unless you know what you're doing
-      'sunset_info_screen_nag': False,
-      'sunset_kill_switch': False,
-      'sunset_info_screen': False,
-
+      # Effect is unknown. Changing these isn't recommended
+      "app_launch_rssi_limit":0,
+      "auto_restart_after_ota":False,
+      "enable_push_to_talk_npv":False,
+      "enable_push_to_talk_shelf":False,
+      "error_messaging_no_network":True,
+      "get_home_enabled":True,
+      "hide_home_more_button":True,
+      "long_press_settings_power_off_v2":True,
+      "podcast_speed_change_enabled":True,
+      "podcast_trailer_enabled":True,
+      "queue_enabled":True,
+      "tips_enabled":True,
+      "tips_interaction_delay":4,
+      "tips_on_demand_enabled":True,
+      "tips_request_interval":900,
+      "tips_show_time":20,
+      "tips_startup_delay":600,
+      "tips_track_change_delay":10,
+      "tracklist_context_menu_enabled":True,
+      "use_new_voice_ui":True,
+      "use_relative_volume_control":True,
+      "volume_control":True,
+      
       # Can / will break stuff. Don't touch unless you know what you're doing.
       'graphql_endpoint_enabled': True,
       'graphql_for_shelf_enabled': True,
@@ -256,7 +256,8 @@ old_homescreen = {
    ]
 }
 
-# Everything below this line is unused but kept for reference
+### Everything below this line is unused in normal operation but kept for reference ###
+
 example_play_queue = {
    'next':[
        {

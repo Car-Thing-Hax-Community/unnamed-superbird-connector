@@ -44,6 +44,7 @@ def update_status():
     try:
         pstate = remote_api.get_player_state()
         np_queue = remote_api.get_queue()
+        context = remote_api.get_context()
         if "com.spotify.superbird.player_state" in session['subscriptions']: # Different fw versions sub to different state events?
             print("Sub: Send player state")
             pub_id += 1
@@ -60,6 +61,12 @@ def update_status():
             print("Sub: Send queue")
             pub_id += 1
             info = wamp_b.build_wamp_event(session['subscriptions']['com.spotify.play_queue']['sub_id'], pub_id, np_queue)
+            bt_handler.addToOutbox(info)
+
+        if "com.spotify.current_context" in session['subscriptions']:
+            print("Sub: Send context")
+            pub_id += 1
+            info = wamp_b.build_wamp_event(session['subscriptions']['com.spotify.current_context']['sub_id'], pub_id, context)
             bt_handler.addToOutbox(info)
 
     except Exception:

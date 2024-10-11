@@ -21,7 +21,13 @@ def action(act, arg = None):
         case "shuffle":
             sp.shuffle(arg)
         case "save":
-            sp.save
+            saveItem(arg)
+        case "seek_to":
+            sp.seek_track(round(arg))
+        case "select_device":
+            sp.transfer_playback(arg)
+        case "add_queue":
+            sp.add_to_queue(arg)
     pubsub_handler.update_status()
 
 def get_queue():
@@ -30,10 +36,10 @@ def get_queue():
         'current':{
             'uid':'null',
             'uri':'spotify:track:aaaaaaaaaaaaaaaaaaaaab',
-            'name':'Select a device to start playback',
+            'name':'Select a device or start playing music',
             'artists':[
                 {
-                "name":"Or just start playing music",
+                "name":"",
                 "uri":"spotify:artist:aaaaaaaaaaaaaaaaaaaaaa"
             },
             ],
@@ -86,7 +92,8 @@ def get_queue():
 
 def get_player_state():
     out = {
-        "context_uri":"none",
+        "context_uri":"context_uri",
+        'context_title': 'Context Title',
         "is_paused":True,
         "is_paused_bool":True,
         "playback_options":{
@@ -106,7 +113,7 @@ def get_player_state():
         "track":{
             "album":{},
                 "artist":{
-                    "name":"Or just start playing music",
+                    "name":"",
                     "uri":"spotify:artist:fake"
                 },
                 "artists":[],
@@ -114,7 +121,7 @@ def get_player_state():
             "image_id":"carthinghax_logo", # Rarely used, keep the same as play_queue just in case
             "is_episode":False,
             "is_podcast":False,
-            "name": "Select a device to start playback",
+            "name": "Select a device or start playing music",
             "saved": False,
             'uid':'null',
             "uri":"none"
@@ -125,8 +132,10 @@ def get_player_state():
         return out
     try:
         out['context_uri'] = api_state['context']['uri']
+        out['context_title'] = getNameFromURI(api_state['context']['uri'])
     except:
         out['context_uri'] = 'spotify:none'
+        out['context_title'] = ""
     out['is_paused'] = not api_state['is_playing']
     out['is_paused_bool'] = not api_state['is_playing']
     repeat = 0
@@ -176,7 +185,48 @@ def get_player_state():
     out['track']['saved'] = sp.current_user_saved_tracks_contains([api_state['item']['uri']])[0]
     out['track']['uid'] = api_state['item']['uri'] # API doesn't return a UID
     out['track']['uri'] = api_state['item']['uri']
+    #print(out)
     return out
+
+def get_context():
+    curr_api = sp.current_playback()
+    out = {
+        'id':'spotify:none',
+        'uri':'spotify:none',
+        'title':'Context Title',
+        'subtitle':'Context Subtitle',
+        'type':'playlist',
+        'repeat_track':False,
+        'repeat_context':False,
+        'shuffle':False,
+        'can_repeat_track':True,
+        'can_repeat_context':True,
+        'can_shuffle':True
+    }
+    if (curr_api == None) or (curr_api['context'] == None):
+        return out
+    out['title'] = getNameFromURI(curr_api['context']['uri'])
+    out['id'] = curr_api['context']['uri']
+    out['uri'] = curr_api['context']['uri']
+    # out['title'] = curr_api['context']['title']
+    out['type'] = curr_api['context']['type']
+    out['shuffle'] = curr_api['shuffle_state']
+    return out
+
+
+{
+   'id':'spotify:playlist:0CryHan5NsIsI2vsKxwDqD',
+   'uri':'spotify:playlist:0CryHan5NsIsI2vsKxwDqD',
+   'title':'Low energy',
+   'subtitle':'Playing from Playlist',
+   'type':'playlist',
+   'repeat_track':False,
+   'repeat_context':False,
+   'shuffle':False,
+   'can_repeat_track':True,
+   'can_repeat_context':True,
+   'can_shuffle':True
+}
 
 def get_devices():
     out = {
@@ -209,10 +259,110 @@ def get_devices():
     out['total'] = device_count
     out['items'] = devices
     return out
-    
-def select_device(dev):
-    sp.transfer_playback(dev)
 
 def canUseVolume():
     try: return sp.current_playback()['device']['supports_volume']
     except: return False
+
+def getNameFromURI(id):
+    type = str(id).split(":")[1]
+    uid = str(id).split(":")[2]
+    match type:
+        case "user":
+            return "Liked Songs"
+        case "playlist":
+            if uid == "37i9dQZF1EYkqdzj48dyYq": return "DJ" # Spotify API doesn't return DJ info despite technically being a playlist
+            return sp.playlist(uid)['name']
+        case "artist":
+            return sp.artist(uid)['name']
+        case _:
+            return ""
+
+def getChildrenOfItem(id, full_info):
+    out = {
+            'limit':1000,
+            'offset':0,
+            'total':0,
+            'items':[]
+        }
+    try:
+        type = str(id).split(":")[1]
+        uid = str(id).split(":")[2]
+    except:
+        return out
+    items = []
+    match type:
+        case "playlist":
+            playlist_tracks = sp.playlist_items
+            for i in playlist_tracks:
+                out["total"] += 1
+                track_artists = i['artists'].pop(0)['name']
+                if len(i['artists']) >= 1:
+                    for a in i['artists']:   
+                        track_artists += ", " + a['name']
+                items.append({
+                    'id': i['uri'],
+                    'uri': i['uri'],
+                    'image_id': i['album']['images'][0]['url'],
+                    'title': i['name'],
+                    'subtitle': track_artists,
+                    'playable': i['is_playable'],
+                    'has_children':False,
+                    'available_offline':False,
+                    'metadata':{
+                        'is_explicit_content':i['explicit'],
+                        'is_19_plus_content':i['explicit'],
+                        'duration_ms':i['duration_ms']
+                    }
+                })
+
+        case "artist":
+            artist_tracks = sp.playlist_items(uid, "items(track(name,uri,is_playable,explicit,duration_ms,artists(name),album(images(url)))", )
+            for i in artist_tracks:
+                out["total"] += 1
+                track_artists = i['artists'].pop(0)['name']
+                if len(i['artists']) >= 1:
+                    for a in i['artists']:   
+                        track_artists += ", " + a['name']
+                items.append({
+                    'id': i['uri'],
+                    'uri': i['uri'],
+                    'image_id': i['album']['images'][0]['url'],
+                    'title': i['name'],
+                    'subtitle': track_artists,
+                    'playable': i['is_playable'],
+                    'has_children':False,
+                    'available_offline':False,
+                    'metadata':{
+                        'is_explicit_content':i['explicit'],
+                        'is_19_plus_content':i['explicit'],
+                        'duration_ms':i['duration_ms']
+                    }
+                })
+        
+        case "album":
+            album_tracks = sp.playlist_items(uid, "items(track(name,uri,is_playable,explicit,duration_ms,artists(name),album(images(url)))", )
+            for i in album_tracks:
+                out["total"] += 1
+                track_artists = i['artists'].pop(0)['name']
+                if len(i['artists']) >= 1:
+                    for a in i['artists']:   
+                        track_artists += ", " + a['name']
+                items.append({
+                    'id': i['uri'],
+                    'uri': i['uri'],
+                    'image_id': i['album']['images'][0]['url'],
+                    'title': i['name'],
+                    'subtitle': track_artists,
+                    'playable': i['is_playable'],
+                    'has_children':False,
+                    'available_offline':False,
+                    'metadata':{
+                        'is_explicit_content':i['explicit'],
+                        'is_19_plus_content':i['explicit'],
+                        'duration_ms':i['duration_ms']
+                    }
+                })
+
+    out['items'] = items
+    return out

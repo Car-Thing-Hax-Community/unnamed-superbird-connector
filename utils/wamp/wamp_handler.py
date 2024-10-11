@@ -11,6 +11,10 @@ import utils.handlers.update_handler as updater
 import utils.remote_api as remote_api
 import utils.handlers.pubsub_handler as pubsub_handler
 import time
+
+# When a user says "Hey Spotify", Connector can record the data to audio.ogg
+saveVoiceRecording = False
+
 # AUTHENTICATE handler: AUTHENTICATE is the response to our "CHALLENGE" message. 
 # We tell Superbird that it passed the challenge/response by sending a "WELCOME" message
 def authenticate_handler():
@@ -25,7 +29,6 @@ def authenticate_handler():
                                                 'authmethod': '',
                                                 'date_time': datetime.datetime.now().isoformat()})
     return True, resp, False, []
-
 
 # HELLO handler: When Superbird sends a "HELLO" WAMP message, we reply with a "CHALLENGE" message
 # Luckily, Superbird doesn't check the challenge/response process so we can just throw whatever we want
@@ -97,7 +100,7 @@ def function_handler(msg):
 
                 case "com.spotify.superbird.ota.transfer":
                     print("Superbird: Get OTA chunk")
-                    ret = updater.send_chunk(func_argskw)
+                    ret = updater.send_ota_chunk(func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, ret)     
 
                 case "com.spotify.superbird.graphql": # Proper handling of this should be implemented at some point.
@@ -124,8 +127,11 @@ def function_handler(msg):
                     print("Superbird: Start voice session")
 
                 case "com.spotify.superbird.voice.data":
-                    print("Superbird: Sending voice data, writing to audio.ogg")
-                    open("audio.ogg", "ab").write(func_argskw['voice_data'])
+                    if saveVoiceRecording:
+                        print("Superbird: Sending voice data, writing to audio.ogg")
+                        open("audio.ogg", "ab").write(func_argskw['voice_data'])
+                    else:
+                        print("Superbird: Sending voice data, ignoring")
                     sendResp = False
                     resp = {}
 
@@ -176,7 +182,7 @@ def function_handler(msg):
                     if "CONNECTOR:collection:DEVICE_SEL" in func_argskw['parent_id']:
                         ret = remote_api.get_devices()
                     else:
-                        ret = sb_msgs.get_children_resp
+                        ret = remote_api.getChildrenOfItem(func_argskw['parent_id'], func_argskw)
                     resp = wamp_b.build_wamp(sb_c.opCodes.RESULT, request_id, ret)
                 
                 case "com.spotify.superbird.play_uri":
@@ -186,7 +192,7 @@ def function_handler(msg):
                         if "DEVICE_SEL" in str(func_argskw["uri"]):
                             try:
                                 dev_id = str(func_argskw["skip_to_uri"]).split("DEVID:",1)[1]
-                                remote_api.select_device(dev_id)
+                                remote_api.action("select_device", dev_id)
                             except:
                                 pass
                     else:
@@ -199,6 +205,10 @@ def function_handler(msg):
                         print("Superbird: Play uri " + uri + context)
                     with_event = True
                 
+                case "com.spotify.superbird.seek_to":
+                    remote_api.action("seek_to", func_argskw['position'])
+                    with_event = True
+
                 case "com.spotify.superbird.set_shuffle":
                     print("Superbird: Set shuffle to", func_argskw['shuffle'])
                     remote_api.action("shuffle", func_argskw['shuffle'])
@@ -236,6 +246,11 @@ def function_handler(msg):
                     
                 case "com.spotify.queue_spotify_uri":
                     print("Superbird: Add to queue. URI:", func_argskw['uri'])
+                    remote_api.action("add_queue", func_argskw['uri'])
+                    with_event = True
+                
+                case "com.spotify.superbird.dj.summon":
+                    print("Superbird: Summon DJ (Not supported)")
 
                 case _: # Calls that don't have a handler just get an empty response and get printed to console
                     print("\n\nSuperbird: Unhandled call:", called_func, "\nRequest ID:", request_id, "\nWAMP Options:", wamp_options, "\nArguments:", func_args, "\nnArgumentsKw:", func_argskw, '\n')

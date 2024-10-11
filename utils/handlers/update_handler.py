@@ -28,7 +28,7 @@ def check(json_in): # Put OTA check logic here at some point, for now we hardcod
     except:
         return {}
 
-def send_chunk(json): # When there's an update available, Superbird will pull the update in chunks
+def send_ota_chunk(json): # When there's an update available, Superbird will pull the update in chunks
     print(json)
     offset = json['offset']
     size = json['size']

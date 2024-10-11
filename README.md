@@ -14,7 +14,7 @@ Sometimes Connector can cause Superbird to freeze up or bug out in some way. I h
 but in the event that a reboot doesn't fix it, you can try factory resetting Superbird by holding the preset 2 and back buttons while plugging it in until the 
 Spotify logo appears.
 
-Another thing, there's currently no local caching so sometimes there may be visual artifacts such as songs not skipping immediately.
+Another thing, there's currently no local caching so sometimes there may be visual artifacts such as songs not skipping immediately or play/pause taking a few seconds to update.
 
 There's a very small chance this will exceed rate limits. If you start seeing 429 errors in the terminal, stop Connector for a little bit to allow the API to cool down.
 
@@ -50,7 +50,7 @@ Once it connects, you can go through all the menus as if Superbird was connected
 
 # Contributing / forking
 If you'd like to add support for another service, feel free to make a fork of this repo! All the code that talks to the Spotify API
-is in remote_api.py so that *should* be the only file you need to edit. If you need any help/guidance, feel free to ask in the Discord!
+is in remote_api.py so that *should* be the only file you need to edit unless you're adding brand new features. If you need any help/guidance, feel free to ask in the Discord!
 
 # Credits
 https://github.com/Merlin04/superbird-webapp - Lots of communication is handled by the webapp. The reconstructed code makes it easy to figure out how to handle messages
