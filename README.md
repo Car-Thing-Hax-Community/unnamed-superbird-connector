@@ -19,7 +19,7 @@ Another thing, there's currently no local caching so sometimes there may be visu
 There's a very small chance this will exceed rate limits. If you start seeing 429 errors in the terminal, stop Connector for a little bit to allow the API to cool down.
 
 # Current Progress
-Most, if not all messages to/from Superbird are implemented.\
+Most, if not all messages to/from Superbird are implemented. In most cases the data returned is just placeholder data.\
 Currently playback control (except queue and saving tracks) and switching devices is implemented.
 
 Superbird actually processes some commands on device so you can already use "Hey Spotify". These are the available commands:
@@ -56,3 +56,6 @@ is in remote_api.py so that *should* be the only file you need to edit unless yo
 https://github.com/Merlin04/superbird-webapp - Lots of communication is handled by the webapp. The reconstructed code makes it easy to figure out how to handle messages
 
 https://github.com/relative/deskthing - Early base for this code
+
+# Disclaimer
+"Spotify", "Car Thing" and the Spotify logo are registered trademarks or trademarks of Spotify AB. Thing Labs is not affiliated with, endorsed by, or sponsored by Spotify AB. All other trademarks, service marks, and trade names are the property of their respective owners.
