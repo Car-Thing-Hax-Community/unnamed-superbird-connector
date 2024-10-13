@@ -9,14 +9,14 @@ Currently only tested on Debian
 
 **If you get any exceptions or `Unhandled call` errors, please open an issue that describes what you were doing and a copy of the error. Every little bit of info helps!**
 
-# Disclaimer
+# Bug Disclaimer
 Sometimes Connector can cause Superbird to freeze up or bug out in some way. I haven't encountered any issues that required anything more than a reboot to fix
 but in the event that a reboot doesn't fix it, you can try factory resetting Superbird by holding the preset 2 and back buttons while plugging it in until the 
 Spotify logo appears.
 
 Another thing, there's currently no local caching so sometimes there may be visual artifacts such as songs not skipping immediately or play/pause taking a few seconds to update.
 
-There's a very small chance this will exceed rate limits. If you start seeing 429 errors in the terminal, stop Connector for a little bit to allow the API to cool down.
+There's a very small chance this will exceed rate limits of the Spotify Web API. If you start seeing 429 errors in the terminal, stop Connector for a little bit to allow the API to cool down.
 
 # Current Progress
 Most, if not all messages to/from Superbird are implemented. In most cases the data returned is just placeholder data.\
